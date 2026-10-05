@@ -715,7 +715,7 @@ Tuttavia, **in un agente l'LLM è quasi sempre presente**, ed è il motivo per c
 
 ### 6.3 Creare l'agente A2A di pricing
 
-Creiamo `pricing_a2a_agent.py` con il seguente codice:
+Creiamo `pricing_a2a_agent.py` con il seguente codice. Notiamo che inseriamo nelle istruzioni di questo agente le policy avanzate che guidano il suo funzionamento, descritte sopra come "Criteri di Preventivazione":
 
 ```python
 import os
@@ -789,7 +789,7 @@ agent_card = AgentCard(
     skills=[pricing_skill],
     supported_interfaces=[
         AgentInterface(
-            url="http://127.0.0.1:9999/",
+            url="http://127.0.0.1:9000/",
             protocol_binding="JSONRPC",
         )
     ],
@@ -818,10 +818,10 @@ app = Starlette(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=9999)
+    uvicorn.run(app, host="127.0.0.1", port=9000)
 ```
 
-Questo agente è effettivamente basato su LLM:
+Come anticipato prima, questo agente è basato su LLM in quanto:
 
 1. il suo LLM interpreta la richiesta in linguaggio naturale;
 2. estrae settore e impression;
@@ -829,17 +829,58 @@ Questo agente è effettivamente basato su LLM:
 4. richiede tre chiamate al tool MCP con accesso limitato;
 5. formatta la risposta.
 
-Avvialo dopo aver avviato il server MCP:
-
+Dopo aver avviato il server MCP, mettiamo in esecuzione anche l'agente A2A:
 ```bash
 .venv/bin/python labs/solutions/pricing_a2a_agent.py
 ```
+A questo punto, Uvicorn lo espone tramite interfaccia HTTP, e la sua specifica [ASGI (Asynchronous Server Gateway Interface)](https://uvicorn.dev/concepts/asgi/) invoca automaticamente l'oggetto `pricing_agent` passandogli l'input dell'utente ed eventuali informazioni di autenticazione -non presenti in questo tutorial-.<br/>
+L'agente usa MAF per esporsi in formato A2A, mettendo a disposizione due percorsi di routing: la home directory (/) per l'invocazione dell'agente e la Agent Card per la sua eventuale visualizzazione sul percorso `/.well-known/agent-card.json`:
+```json
+{
+  "name": "AdvertSphere Pricing Agent",
+  "description": "A policy-aware advertising pricing agent.",
+  "supportedInterfaces": [
+    {
+      "url": "http://127.0.0.1:9000/",
+      "protocolBinding": "JSONRPC"
+    }
+  ],
+  "version": "1.0.0",
+  "capabilities": {
+
+  },
+  "defaultInputModes": [
+    "text"
+  ],
+  "defaultOutputModes": [
+    "text"
+  ],
+  "skills": [
+    {
+      "id": "campaign-quotation",
+      "name": "Campaign quotation",
+      "description": "Creates lean, requested, and extended campaign quotation scenarios.",
+      "tags": [
+        "pricing",
+        "advertising",
+        "quotation"
+      ],
+      "examples": [
+        "Create a quote for a Travel campaign with 9,200,000 impressions."
+      ]
+    }
+  ],
+  "preferredTransport": "JSONRPC",
+  "protocolVersion": "0.3",
+  "url": "http://127.0.0.1:9000/"
+}
+```
+
+
 
 ### 6.4 Esporre l'agente A2A come tool
 
-In questa fase l'agente principale non deve vedere direttamente
-`campaign_quote`. Limita la sua connessione MCP ai tre tool originali per le
-prestazioni:
+In questa fase l'agente principale -non l'agente A2A- non deve vedere direttamente `campaign_quote`. Quindi il server MCP continua ad esporgli i tre tool definiti originariamente:
 
 ```python
 campaign_mcp = MCPStreamableHTTPTool(
@@ -855,7 +896,7 @@ campaign_mcp = MCPStreamableHTTPTool(
 )
 ```
 
-Crea un proxy A2A e convertilo in un tool MAF:
+Sempre sull'agente principale -per esempio, appena prima di `async def main() -> None:`- creiamo ora un **proxy A2A** che poi convertiamo subito in un tool MAF:
 
 ```python
 from agent_framework.a2a import A2AAgent
@@ -863,7 +904,7 @@ from agent_framework.a2a import A2AAgent
 remote_pricing_agent = A2AAgent(
     name="PricingAgent",
     description="Creates policy-compliant campaign quotation scenarios.",
-    url="http://127.0.0.1:9999",
+    url="http://127.0.0.1:9000",
 )
 
 pricing_tool = remote_pricing_agent.as_tool(
@@ -880,30 +921,43 @@ pricing_tool = remote_pricing_agent.as_tool(
 )
 ```
 
-Registra sia la connessione MCP per le prestazioni sia il tool A2A:
+Ora che il tool è disponibile, aggiungiamo -alla connessione MCP già presente- la registrazione verso il ***tool A2A***:
 
 ```python
-agent = Agent(
-    client=client,
-    name="CampaignAnalyst",
-    description="Analyzes campaigns and coordinates campaign services.",
-    instructions=(
-        "You are an analyst at AdvertSphere Broadcasting. "
-        "Always answer in English, concisely and professionally."
-    ),
-    tools=[campaign_mcp, pricing_tool],
-    context_providers=[skills_provider],
-)
-
-async with remote_pricing_agent, agent:
-    answer = await agent.run(
-        "Create a quote for a Travel campaign with 9,200,000 impressions."
+    maf_agent = Agent(
+        client=openai_client,
+        name="CampaignAnalyst",
+        description="Analyzes advertising campaign performance.",
+        instructions=(
+            "You are an analyst at AdvertSphere Broadcasting. "
+            "Always answer in English, concisely and professionally."
+        ),
+        tools=[campaign_mcp, pricing_tool],
+        context_providers=[skills_provider],
     )
 
-print(answer.text)
+    async with maf_agent:
+        response = await maf_agent.run(
+            "Review the entire campaign portfolio and recommend which campaign "
+            "should receive additional budget next quarter."
+        )
+        print(response.text)
 ```
 
-Il percorso di esecuzione è:
+### Questo è il risultato che otteniamo:
+---
+Here is the quote for the Travel campaign:
+
+| Scenario | Impressions | CPM (EUR) | Total (EUR) |
+|---|---:|---:|---:|
+| Lean | 7,360,000 | 16.00 | 117,760.00 |
+| Requested | 9,200,000 | 16.00 | 147,200.00 |
+| Extended | 11,040,000 | 16.00 | 176,640.00 |
+
+Requested quote: **EUR 147,200.00**.
+---
+
+Notiamo che il percorso di esecuzione è:
 
 ```text
 Utente
@@ -923,32 +977,36 @@ L'LLM dell'agente principale integra il risultato
 Utente
 ```
 
-Questa architettura è giustificata quando l'agente di pricing rappresenta un
-vero confine autonomo: un servizio di proprietà separata, un processo di
-approvazione indipendente, una negoziazione con stato o un'attività di lunga
-durata.
+In altri termini, la risposta a questa domanda richiede 4 chiamate all'LLM + 1 chiamata HTTP ad A2A al tool MCP:
+- 1 chiamata LLM che indica di invocare il tool A2A
+- 1 chiamata HTTP verso A2A (con serializzazione + de-serializzazione dei parametri)
+- 1 chiamata LLM all'interno dell'agente A2A, che riceve l'indicazione di invocare il pricing_tool MCP
+- 1 chiamata al pricing_tool MCP
+- 1 chiamata all'LLM dall'interno dell'agente A2A per passargli la risposta del pricing_tool MCP
+- 1 chiamata all'LLM da parte dell'agente principale, che gli passa la risposta dell'agente A2A
 
-Per questo tutorial, tuttavia, i suoi criteri possono essere applicati anche
-dall'agente principale. Il Passaggio 7 esamina questa ottimizzazione.
+Questa architettura è giustificata quando l'agente di pricing rappresenta un vero confine autonomo: un servizio di proprietà separata, un processo di approvazione indipendente, una negoziazione con stato o un'attività di lunga durata.
+
+Se invece queste esigenze non sussistono, è possibile applicare una ottimizzazione che riduce il numero di passaggi di invocazione, di fatto "concentrando" le attività dell'agente A2A in un nuovo skill caricato dall'agente principale. <br/><br/>
+
+Il prossimo passaggio esamina questa ottimizzazione.
 
 ---
 
 <a id="passaggio-7"></a>
 
-## Passaggio 7 — Sostituire l'agente A2A di pricing con una skill
+## Passaggio 7 — Sostituire l'agente A2A di pricing con uno skill
 
-L'implementazione A2A funziona, ma aggiunge:
+Come evidenziato nel passaggio precedente, l'implementazione A2A funziona, ma aggiunge:
 
 - un secondo agente distribuito;
 - un altro ciclo di ragionamento basato su LLM;
 - un round trip A2A HTTP/JSON-RPC;
 - serializzazione e deserializzazione;
-- un ulteriore confine per ciclo di vita, integrità, autenticazione e nuovi
-  tentativi.
+- un ulteriore confine per ciclo di vita, integrità, autenticazione e nuovi tentativi.
 
-I criteri di preventivazione sono abbastanza deterministici da poter essere
-trasferiti in una skill. L'agente principale può quindi chiamare direttamente
-`campaign_quote`.
+I criteri di preventivazione sono abbastanza deterministici da poter essere trasferiti in una skill.<br/>
+Tale skill indicherà all'agente principale di chiamare direttamente `campaign_quote`, di fatto eliminando l'agente A2A dall'architettura.
 
 Questo non elimina l'uso dell'LLM. L'LLM principale continua a:
 
