@@ -463,61 +463,56 @@ con il contenuto seguente:
 ---
 name: campaign-performance-review
 description: >-
-  Da usare per revisioni di campagne, analisi di portafoglio, classifiche,
-  raccomandazioni di investimento e confronti relativi a redditività, scala,
-  efficienza o qualità dei dati.
+  Use for campaign reviews, portfolio analyses, rankings, investment
+  recommendations, and comparisons involving profitability, scale, efficiency,
+  or data quality.
 ---
 
-# Revisione delle prestazioni delle campagne
+# Campaign performance review
 
-Applica un metodo coerente e basato su evidenze per valutare le prestazioni
-delle campagne. Basa ogni conclusione sui dati recuperati delle campagne e
-rendi espliciti i compromessi.
+Apply a consistent, evidence-based method to assess campaign performance.
+Base every conclusion on retrieved campaign data and make trade-offs explicit.
 
-## Tool necessari
+## Required tools
 
-- Usa `all_campaigns` per identificare le campagne nel portafoglio.
-- Usa `campaign_metrics` per recuperare budget, impression, conversioni e
-  ricavi di una campagna.
-- Usa `compute_roi` per calcolare il ROI dai valori recuperati di ricavi e
-  budget.
+- Use `all_campaigns` to identify the campaigns in the portfolio.
+- Use `campaign_metrics` to retrieve budget, impressions, conversions, and
+  revenue for a campaign.
+- Use `compute_roi` to calculate ROI from retrieved revenue and budget values.
 
-Non inventare risultati mancanti dei tool e non sostituire `compute_roi` con un
-calcolo manuale del ROI. Se un tool necessario non è disponibile o non
-funziona, identifica le informazioni mancanti e limita di conseguenza
-l'analisi.
+Do not invent missing tool results or replace `compute_roi` with a manual ROI
+calculation. If a required tool is unavailable or fails, identify the missing
+information and limit the analysis accordingly.
 
-## Procedura
+## Procedure
 
-1. Per un'analisi dell'intero portafoglio, chiama `all_campaigns`; per una
-   revisione mirata, inizia dagli identificatori di campagna forniti
-   dall'utente.
-2. Chiama `campaign_metrics` per ogni campagna inclusa nell'analisi.
-3. Chiama `compute_roi` per ogni campagna i cui ricavi e budget sono validi.
-4. Valuta ogni campagna in base a:
-   - redditività: ROI;
-   - scala: ricavi e conversioni;
-   - efficienza: conversioni rispetto al budget;
-   - qualità dei dati: valori mancanti o non validi.
-5. Non dichiarare una campagna "migliore" basandoti soltanto sul ROI, a meno
-   che l'utente richieda esplicitamente un confronto basato solo sul ROI.
-6. Se ROI e scala indicano vincitori diversi, spiega il compromesso.
-7. Se i dati necessari sono mancanti o non validi, identifica le metriche
-   interessate e non classificare la campagna in base a tali metriche.
+1. For a portfolio-wide analysis, call `all_campaigns`; for a focused review,
+   start with the campaign identifiers supplied by the user.
+2. Call `campaign_metrics` for every campaign included in the analysis.
+3. Call `compute_roi` for every campaign whose revenue and budget are valid.
+4. Evaluate each campaign on:
+   - profitability: ROI;
+   - scale: revenue and conversions;
+   - efficiency: conversions relative to budget;
+   - data quality: missing or invalid values.
+5. Do not declare a campaign "best" using ROI alone unless the user explicitly
+   requests an ROI-only comparison.
+6. If ROI and scale suggest different winners, explain the trade-off.
+7. If required data is missing or invalid, identify the affected metrics and
+   do not rank the campaign on those metrics.
 
-## Formato di output
+## Output format
 
-Per una revisione del portafoglio o una raccomandazione di investimento,
-restituisci:
+For a portfolio review or investment recommendation, return:
 
-1. Sintesi esecutiva
-2. Tabella delle metriche
-3. Compromessi
-4. Raccomandazione
-5. Limiti dei dati
+1. Executive summary
+2. Metrics table
+3. Trade-offs
+4. Recommendation
+5. Data limitations
 
-Per un confronto mirato, fornisci una tabella concisa delle metriche, spiega i
-compromessi pertinenti e rispondi direttamente alla domanda dell'utente.
+For a focused comparison, provide a concise metrics table, explain the relevant
+trade-offs, and answer the user's question directly.
 ```
 
 Registra un `SkillsProvider`:
@@ -984,7 +979,7 @@ In altri termini, la risposta a questa domanda richiede 4 chiamate all'LLM + 1 c
 - 1 chiamata LLM all'interno dell'agente A2A, che riceve l'indicazione di invocare il pricing_tool MCP
 - 1 chiamata al pricing_tool MCP
 - 1 chiamata all'LLM dall'interno dell'agente A2A per passargli la risposta del pricing_tool MCP
-- 1 chiamata all'LLM da parte dell'agente principale, che gli passa la risposta dell'agente A2A
+- 1 chiamata all'LLM da parte dell'agente principale, che gli passa la risposta dell'agente A2A per fargli generare la risposta finale.
 
 Questa architettura è giustificata quando l'agente di pricing rappresenta un vero confine autonomo: un servizio di proprietà separata, un processo di approvazione indipendente, una negoziazione con stato o un'attività di lunga durata.
 
@@ -1034,51 +1029,49 @@ skills/campaign-quotation-policy/SKILL.md
 ---
 name: campaign-quotation-policy
 description: >-
-  Da usare per prezzi di campagne, preventivi, stime dei costi, scenari di
-  budget o brief pubblicitari che specificano un settore e un numero obiettivo
-  di impression.
+  Use for campaign prices, quotations, cost estimates, budget scenarios, or
+  advertising briefs that specify a sector and a target number of impressions.
 ---
 
-# Criteri di preventivazione delle campagne
+# Campaign quotation policy
 
-Crea un preventivo di campagna conforme ai criteri usando dati di pricing
-autorevoli.
+Create a policy-compliant campaign quotation from authoritative pricing data.
 
-## Tool necessario
+## Required tool
 
-Usa `campaign_quote` per ogni scenario e ogni valore monetario. Non calcolare,
-dedurre o modificare mai direttamente le tariffe CPM o i prezzi delle campagne.
+Use `campaign_quote` for every scenario and every monetary value. Never
+calculate, infer, or modify CPM rates or campaign prices directly.
 
-## Input necessari
+## Required inputs
 
-- Settore pubblicitario
-- Numero di impression richiesto
+- Advertising sector
+- Requested number of impressions
 
-Se uno dei due input manca, chiedilo all'utente prima di richiedere un
-preventivo. Rifiuta volumi di impression pari a zero o negativi.
+If either input is missing, ask the user for it before requesting a quote.
+Reject zero or negative impression volumes.
 
-## Procedura
+## Procedure
 
-1. Estrai il settore e le impression richieste dalla richiesta dell'utente.
-2. Calcola soltanto i volumi di impression per questi scenari:
-   - ridotto: 20% di impression in meno rispetto a quanto richiesto;
-   - richiesto: il numero originale di impression;
-   - esteso: 20% di impression in più rispetto a quanto richiesto.
-3. Arrotonda le impression degli scenari a numeri interi.
-4. Chiama `campaign_quote` una volta per ogni scenario.
-5. Usa il CPM e il prezzo totale restituiti dal tool senza modificarli.
-6. Se il tool segnala `used_default_rate=true`, dichiara chiaramente che per il
-   settore è stato usato il CPM predefinito.
-7. Non descrivere il risultato come un'offerta commerciale approvata.
+1. Extract the sector and requested impressions from the user's request.
+2. Calculate only the impression volumes for these scenarios:
+   - lean: 20% fewer impressions than requested;
+   - requested: the original number of impressions;
+   - extended: 20% more impressions than requested.
+3. Round scenario impressions to whole numbers.
+4. Call `campaign_quote` once for each scenario.
+5. Use the CPM and total price returned by the tool without alteration.
+6. If the tool reports `used_default_rate=true`, state clearly that the sector
+   was priced with the default CPM.
+7. Do not describe the result as an approved commercial offer.
 
-## Formato di output
+## Output format
 
-Restituisci:
+Return:
 
-1. Una sintesi di una frase
-2. Una tabella con scenario, impression, CPM e prezzo totale
-3. Un eventuale avviso sulla tariffa predefinita
-4. Una nota che specifichi che i valori sono preventivi indicativi
+1. A one-sentence summary
+2. A table with scenario, impressions, CPM, and total price
+3. Any default-rate warning
+4. A note that the figures are indicative quotations
 ```
 
 La skill fa riferimento a `campaign_quote`, ma non registra il tool. Il tool
