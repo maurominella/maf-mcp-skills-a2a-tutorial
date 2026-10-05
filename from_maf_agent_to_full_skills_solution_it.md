@@ -1019,7 +1019,7 @@ servizio A2A.
 
 ### 7.1 Creare la skill di preventivazione
 
-Crea:
+Creiamo una nuova cartella per il nuovo skill, con all'interno il file SKILL.md:
 
 ```text
 skills/campaign-quotation-policy/SKILL.md
@@ -1080,7 +1080,7 @@ dell'agente principale.
 
 ### 7.2 Fornire all'agente principale accesso diretto a `campaign_quote`
 
-Estendi `allowed_tools`:
+Estendiamo `allowed_tools` aggiungendo il tool `campaign_quote`:
 
 ```python
 campaign_mcp = MCPStreamableHTTPTool(
@@ -1097,8 +1097,7 @@ campaign_mcp = MCPStreamableHTTPTool(
 )
 ```
 
-Entrambe le cartelle delle skill vengono individuate automaticamente perché il
-provider punta alla cartella padre comune:
+Entrambe le cartelle delle skill vengono individuate automaticamente perché il provider punta alla cartella padre comune, quindi questa parte resta invariata:
 
 ```python
 skills_provider = SkillsProvider.from_paths(
@@ -1107,28 +1106,43 @@ skills_provider = SkillsProvider.from_paths(
 )
 ```
 
-Rimuovi il proxy A2A e il relativo tool:
+Rimuoviamo il proxy A2A e il relativo tool:
 
 ```python
-agent = Agent(
-    client=client,
-    name="CampaignAnalyst",
-    description="Analyzes campaigns and creates policy-compliant quotations.",
-    instructions=(
-        "You are an analyst at AdvertSphere Broadcasting. "
-        "Always answer in English, concisely and professionally."
-    ),
-    tools=[campaign_mcp],
-    context_providers=[skills_provider],
-)
-
-async with agent:
-    answer = await agent.run(
-        "Create a quote for a Travel campaign with 9,200,000 impressions."
+    maf_agent = Agent(
+        client=openai_client,
+        name="CampaignAnalyst",
+        description="Analyzes advertising campaign performance.",
+        instructions=(
+            "You are an analyst at AdvertSphere Broadcasting. "
+            "Always answer in English, concisely and professionally."
+        ),            
+        tools=[campaign_mcp],
+        context_providers=[skills_provider],
     )
 
-print(answer.text)
+    async with maf_agent:
+        response = await maf_agent.run(
+            "Create a quote for a Pets campaign with 10,000,000 impressions."
+        )
+        print(response.text)
 ```
+
+#### Eseguiamo il nuovo test. Questo il risultato, che evidenzia il fatto che è stato utilizzato il fattore moltiplicativo (CPM) di default in quanto la categoria **Pets** non esiste:
+---
+Here is an indicative quotation for a Pets campaign at 10,000,000 impressions.
+
+| Scenario | Impressions | CPM | Total price |
+|---|---:|---:|---:|
+| Lean | 8,000,000 | €15.00 | €120,000.00 |
+| Requested | 10,000,000 | €15.00 | €150,000.00 |
+| Extended | 12,000,000 | €15.00 | €180,000.00 |
+
+Default-rate warning: the Pets sector was priced with the default CPM.
+
+These figures are indicative quotations, not an approved commercial offer.
+
+---
 
 Il percorso di esecuzione ottimizzato è:
 
