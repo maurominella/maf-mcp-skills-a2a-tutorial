@@ -89,20 +89,20 @@ import os
 
 from agent_framework import Agent
 from agent_framework.openai import OpenAIChatClient
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 async def main() -> None:
-    client = OpenAIChatClient(
+    openai_client = OpenAIChatClient(
         model=os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
-        credential=AzureCliCredential(),
+        credential=DefaultAzureCredential(exclude_environment_credential=True),
     )
 
-    agent = Agent(
-        client=client,
+    maf_agent = Agent(
+        client=openai_client,
         name="CampaignAnalyst",
         description="Analyzes advertising campaign performance.",
         instructions=(
@@ -111,7 +111,7 @@ async def main() -> None:
         ),
     )
 
-    answer = await agent.run(
+    answer = await maf_agent.run(
         "Review campaign CMP-004 and calculate its ROI."
     )
     print(answer.text)
@@ -121,12 +121,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-Le stringhe di istruzione e i prompt nel codice restano in inglese per
-preservare esattamente il comportamento eseguibile dell'esempio. L'agente può
-spiegare il ROI in generale, ma non può recuperare dati autorevoli sulle
-campagne. Se risponde con valori specifici di una campagna, tali valori non
-sono basati sui dati dell'applicazione.
-
+L'esempio viene eseguito senza errori. Tuttavia, l'agente può spiegare il ROI in generale, ma non può recuperare dati autorevoli sulle campagne. Ci attendiamo quindi una risposta del tipo *I can help calculate ROI for CMP-004, but I don’t have the campaign's performance data in this chat*.<br/>
 In questa fase, l'architettura è:
 
 ```text
@@ -143,27 +138,24 @@ LLM
 
 ## Passaggio 2 — Aggiungere tool funzione locali
 
-Aggiungi tre funzioni deterministiche allo stesso file sorgente:
+Aggiungiamo tre funzioni deterministiche allo stesso file sorgente:
 
 - `all_campaigns`;
 - `campaign_metrics`;
 - `compute_roi`.
 
-Si presuppone che `get_campaign` e `list_campaigns` provengano dal dataset
-esistente delle campagne.
+In questo caso, i due metodi `all_campaigns` e `campaign_metrics` sono funzioni implementate nel file `asb_campaign.py` a puro scopo dimostrativo per consentire l'esecuzione dell'esercizio. In una situazione reale, queste funzioni dovrebbero attingere al dataset reale delle campagne.<br/>
+Questo il codice da aggiungere all'inizio del modulo, subito dopo l'istruzione `load_dotenv()`:
 
 ```python
 from typing import Annotated
-
 from pydantic import Field
-
-from campaign_data import get_campaign, list_campaigns
+from asb_campaign import get_campaign, list_campaigns
 
 
 def all_campaigns() -> list:
     """List the id, client, and sector of every campaign."""
     return list_campaigns()
-
 
 def campaign_metrics(
     campaign_id: Annotated[
@@ -176,7 +168,6 @@ def campaign_metrics(
     if campaign is None:
         return {"error": f"Campaign {campaign_id} was not found."}
     return campaign
-
 
 def compute_roi(
     revenue_eur: Annotated[
@@ -196,11 +187,11 @@ def compute_roi(
     return {"roi_pct": round(roi_pct, 1)}
 ```
 
-Registrale durante la creazione dell'agente:
+L'Agent Framework può registrare i nomi di queste funzioni durante la creazione dell'agente, associandole attraverso un array al parametro `tools` della classe `agent`:
 
 ```python
-agent = Agent(
-    client=client,
+maf_agent = Agent(
+    client=openai_client,
     name="CampaignAnalyst",
     description="Analyzes advertising campaign performance.",
     instructions=(
