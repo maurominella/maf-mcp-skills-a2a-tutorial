@@ -944,6 +944,7 @@ Ora che il tool è disponibile, aggiungiamo -alla connessione MCP già presente-
 ```
 
 #### Questo è il risultato che otteniamo, in linea con le istruzioni dell'agente A2A:
+
 ---
 Here is the quote for the Travel campaign:
 
@@ -954,6 +955,7 @@ Here is the quote for the Travel campaign:
 | Extended | 11,040,000 | 16.00 | 176,640.00 |
 
 Requested quote: **EUR 147,200.00**.
+
 ---
 
 Notiamo che il percorso di esecuzione è:
