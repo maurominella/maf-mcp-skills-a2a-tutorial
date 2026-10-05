@@ -593,7 +593,7 @@ parte dell'agente. Il vantaggio è che le funzionalità esistenti vengono usate
 attraverso un flusso di lavoro coerente e riutilizzabile.
 
 Tipica riposta, molto più standard e aderente al formato richiesto:
-```markdown
+---
 ## Executive summary
 
 After reviewing the full portfolio, **CMP-004 (VoloBlu, Travel)** should receive additional budget next quarter. It delivers the strongest combination of **profitability, scale, and conversion volume** across the portfolio.
@@ -628,7 +628,7 @@ If budget is available for a secondary bet, **CMP-003** is the next-best candida
 - The review is based on the metrics provided by the portfolio tools.
 - No breakdown was available by audience, channel, or creative variant beyond the campaign-level channellabel.
 - No margin or lifetime value data was provided, so this recommendation is based on **revenue and ROI**,not net profit.
-```
+---
 
 
 ---
