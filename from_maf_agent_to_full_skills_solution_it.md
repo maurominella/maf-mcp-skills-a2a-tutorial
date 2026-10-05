@@ -587,13 +587,13 @@ La skill segue la divulgazione progressiva:
 La skill non registra i tool. Nomina e orchestra tool che devono essere già
 disponibili tramite `Agent(tools=[...])`.
 
-Ripeti il prompt del Passaggio 4 e valuta gli stessi criteri. Il miglioramento
+Ripetiamo il prompt del Passaggio 4 e valuta gli stessi criteri. Il miglioramento
 previsto non consiste nell'acquisizione improvvisa di nuovi dati o calcoli da
 parte dell'agente. Il vantaggio è che le funzionalità esistenti vengono usate
 attraverso un flusso di lavoro coerente e riutilizzabile.
 
 Tipica riposta, molto più standard e aderente al formato richiesto:
-```md
+```markdown
 ## Executive summary
 
 After reviewing the full portfolio, **CMP-004 (VoloBlu, Travel)** should receive additional budget next quarter. It delivers the strongest combination of **profitability, scale, and conversion volume** across the portfolio.
