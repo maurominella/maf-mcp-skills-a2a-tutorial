@@ -3,7 +3,7 @@
 .env
 .env.*
 *.generated.config.json
-!.env.example
+!.env.sample
 
 # Python / uv virtual environments
 .venv/
