@@ -594,13 +594,13 @@ attraverso un flusso di lavoro coerente e riutilizzabile.
 
 Tipica riposta, molto più standard e aderente al formato richiesto:
 ---
-## Executive summary
+### Executive summary
 
 After reviewing the full portfolio, **CMP-004 (VoloBlu, Travel)** should receive additional budget next quarter. It delivers the strongest combination of **profitability, scale, and conversion volume** across the portfolio.
 
 While **CMP-003 (FreschErba)** has the lowest budget and strong efficiency, it is smaller in absolute revenue impact. **CMP-004** is the best candidate for incremental investment because it leads on **ROI, revenue, and conversions**.
 
-## Metrics table
+### Metrics table
 
 | Campaign | Client | Sector | Budget (€) | Revenue (€) | Conversions | ROI | Revenue / Budget | Notes |
 |---|---|---:|---:|---:|---:|---:|---:|---|
@@ -610,20 +610,20 @@ While **CMP-003 (FreschErba)** has the lowest budget and strong efficiency, it i
 | CMP-004 | VoloBlu | Travel | 150,000 | 351,000 | 2,208 | 134.0% | 2.34x | Best overall performer |
 | CMP-005 | TeleCasa | Telco | 80,000 | 72,000 | 387 | -10.0% | 0.90x | Underperforming |
 
-## Trade-offs
+### Trade-offs
 
 - **CMP-004** is the clear leader on **ROI** and also has the highest **revenue** and **conversions**, so it scales well and is profitable.
 - **CMP-003** is more efficient relative to budget, but its **absolute return is lower** than CMP-004, so it is better suited for controlled testing than major budget expansion.
 - **CMP-001** is respectable but trails CMP-004 on both profitability and scale.
 - **CMP-005** is losing money and should not receive additional budget without a major strategy change.
 
-## Recommendation
+### Recommendation
 
 **Allocate additional budget to CMP-004 (VoloBlu).**
 
 If budget is available for a secondary bet, **CMP-003** is the next-best candidate for a smaller incremental increase because of its strong efficiency, but **CMP-004 should be the primary recipient**.
 
-## Data limitations
+### Data limitations
 
 - The review is based on the metrics provided by the portfolio tools.
 - No breakdown was available by audience, channel, or creative variant beyond the campaign-level channellabel.
