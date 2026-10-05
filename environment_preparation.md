@@ -197,7 +197,11 @@ Close and reopen the terminal if requested by the installer, then verify with `u
 Run these once per exercise folder, where you find the `requirements.txt` file (like [`01-microsoft-ai-platform/requirements.txt`](01-microsoft-ai-platform/requirements.txt)).
 
 ```bash
-# 1. Create the project folder and enter it
+# 1A. (Only when a pyproject.toml already exists) --> sync the environment
+uv sync --active --prerelease=allow
+
+# If step 1A was not performed, please run the following steps:
+# 1B. Create the project folder and enter it
 mkdir my-lab && cd my-lab
 
 # 2. Initialise a uv project on Python 3.13
@@ -215,10 +219,7 @@ uv add --active -r requirements.txt --prerelease=allow
 # 6. Confirm what got installed
 uv pip list
 
-# 7. (Only when a pyproject.toml already exists) sync the environment
-uv sync --active --prerelease=allow
-
-# 8. Deactivate when finished
+# 7. Deactivate when finished
 deactivate
 ```
 

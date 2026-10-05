@@ -1,0 +1,25 @@
+# Secrets & local config
+*.env
+.env
+.env.*
+*.generated.config.json
+!.env.example
+
+# Python / uv virtual environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Build / dist
+build/
+dist/
+node_modules/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
