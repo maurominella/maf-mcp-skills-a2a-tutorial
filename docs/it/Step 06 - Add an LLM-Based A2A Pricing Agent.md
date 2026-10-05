@@ -196,7 +196,7 @@ Come anticipato prima, questo agente è basato su LLM in quanto:
 
 Dopo aver avviato il server MCP, mettiamo in esecuzione anche l'agente A2A:
 ```bash
-.venv/bin/python labs/solutions/pricing_a2a_agent.py
+.venv/bin/python labs/pricing_a2a_agent.py
 ```
 A questo punto, Uvicorn lo espone tramite interfaccia HTTP, e la sua specifica [ASGI (Asynchronous Server Gateway Interface)](https://uvicorn.dev/concepts/asgi/) invoca automaticamente l'oggetto `pricing_agent` passandogli l'input dell'utente ed eventuali informazioni di autenticazione -non presenti in questo tutorial-.<br/>
 L'agente usa MAF per esporsi in formato A2A, mettendo a disposizione due percorsi di routing: la home directory (/) per l'invocazione dell'agente e la Agent Card per la sua eventuale visualizzazione sul percorso `/.well-known/agent-card.json`:
@@ -358,4 +358,3 @@ Se invece queste esigenze non sussistono, è possibile applicare una ottimizzazi
 Il prossimo passaggio esamina questa ottimizzazione.
 
 ---
-

@@ -54,7 +54,7 @@ AZURE_OPENAI_CHAT_DEPLOYMENT_NAME
 La struttura di progetto suggerita è:
 
 ```text
-labs/solutions/
+labs/
 ├── agent_campaign_mcp.py
 ├── campaign_data.py
 ├── campaign_agent.py
@@ -70,4 +70,3 @@ I nomi esatti dei file non sono importanti. Ciò che conta è il modo in cui le
 responsabilità si spostano nel corso dei sette passaggi.
 
 ---
-

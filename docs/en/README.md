@@ -78,7 +78,7 @@ AZURE_OPENAI_CHAT_DEPLOYMENT_NAME
 The suggested project layout is:
 
 ```text
-labs/solutions/
+labs/
 ├── agent_campaign_mcp.py
 ├── campaign_data.py
 ├── campaign_agent.py
@@ -94,4 +94,3 @@ The exact filenames are not important. What matters is how responsibilities
 move across the seven stages.
 
 ---
-

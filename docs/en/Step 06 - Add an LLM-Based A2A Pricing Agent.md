@@ -206,7 +206,7 @@ This agent is genuinely LLM-backed:
 Start it after starting the MCP server:
 
 ```bash
-.venv/bin/python labs/solutions/pricing_a2a_agent.py
+.venv/bin/python labs/pricing_a2a_agent.py
 ```
 
 Uvicorn exposes the agent through HTTP, while its
@@ -377,4 +377,3 @@ moving the A2A agent's behavior into a skill loaded by the main agent. Step 7
 explores that optimization.
 
 ---
-

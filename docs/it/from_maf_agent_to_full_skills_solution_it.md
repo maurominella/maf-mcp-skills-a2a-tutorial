@@ -54,7 +54,7 @@ AZURE_OPENAI_CHAT_DEPLOYMENT_NAME
 La struttura di progetto suggerita è:
 
 ```text
-labs/solutions/
+labs/
 ├── agent_campaign_mcp.py
 ├── campaign_data.py
 ├── campaign_agent.py
@@ -294,7 +294,7 @@ if __name__ == "__main__":
 Avviamo il server MCP:
 
 ```bash
-.venv/bin/python labs/solutions/agent_campaign_mcp.py
+.venv/bin/python labs/agent_campaign_mcp.py
 ```
 ```text
 [10/05/26 14:50:05] INFO     Starting MCP server 'AdvertSphere Campaign MCP' with transport 'http' on              transport.py:361
@@ -826,7 +826,7 @@ Come anticipato prima, questo agente è basato su LLM in quanto:
 
 Dopo aver avviato il server MCP, mettiamo in esecuzione anche l'agente A2A:
 ```bash
-.venv/bin/python labs/solutions/pricing_a2a_agent.py
+.venv/bin/python labs/pricing_a2a_agent.py
 ```
 A questo punto, Uvicorn lo espone tramite interfaccia HTTP, e la sua specifica [ASGI (Asynchronous Server Gateway Interface)](https://uvicorn.dev/concepts/asgi/) invoca automaticamente l'oggetto `pricing_agent` passandogli l'input dell'utente ed eventuali informazioni di autenticazione -non presenti in questo tutorial-.<br/>
 L'agente usa MAF per esporsi in formato A2A, mettendo a disposizione due percorsi di routing: la home directory (/) per l'invocazione dell'agente e la Agent Card per la sua eventuale visualizzazione sul percorso `/.well-known/agent-card.json`:

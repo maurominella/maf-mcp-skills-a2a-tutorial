@@ -69,7 +69,7 @@ if __name__ == "__main__":
 Start the MCP server:
 
 ```bash
-.venv/bin/python labs/solutions/agent_campaign_mcp.py
+.venv/bin/python labs/agent_campaign_mcp.py
 ```
 
 The output confirms that the HTTP MCP endpoint is running:
@@ -150,4 +150,3 @@ LLM → MAF → MCP request → MCP server → Python function
 ```
 
 ---
-

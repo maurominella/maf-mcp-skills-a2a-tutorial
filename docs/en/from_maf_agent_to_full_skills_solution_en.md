@@ -78,7 +78,7 @@ AZURE_OPENAI_CHAT_DEPLOYMENT_NAME
 The suggested project layout is:
 
 ```text
-labs/solutions/
+labs/
 ├── agent_campaign_mcp.py
 ├── campaign_data.py
 ├── campaign_agent.py
@@ -327,7 +327,7 @@ if __name__ == "__main__":
 Start the MCP server:
 
 ```bash
-.venv/bin/python labs/solutions/agent_campaign_mcp.py
+.venv/bin/python labs/agent_campaign_mcp.py
 ```
 
 The output confirms that the HTTP MCP endpoint is running:
@@ -870,7 +870,7 @@ This agent is genuinely LLM-backed:
 Start it after starting the MCP server:
 
 ```bash
-.venv/bin/python labs/solutions/pricing_a2a_agent.py
+.venv/bin/python labs/pricing_a2a_agent.py
 ```
 
 Uvicorn exposes the agent through HTTP, while its

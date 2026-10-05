@@ -69,7 +69,7 @@ if __name__ == "__main__":
 Avviamo il server MCP:
 
 ```bash
-.venv/bin/python labs/solutions/agent_campaign_mcp.py
+.venv/bin/python labs/agent_campaign_mcp.py
 ```
 ```text
 [10/05/26 14:50:05] INFO     Starting MCP server 'AdvertSphere Campaign MCP' with transport 'http' on              transport.py:361
@@ -147,4 +147,3 @@ LLM → MAF → richiesta MCP → server MCP → funzione Python
 ```
 
 ---
-
