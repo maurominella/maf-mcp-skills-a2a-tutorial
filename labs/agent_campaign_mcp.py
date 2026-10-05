@@ -8,6 +8,43 @@ from asb_campaign import get_campaign, list_campaigns
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("AdvertSphere Campaign MCP")
+CPM_BY_SECTOR = {
+    "automotive": 18.0,
+    "finance": 22.0,
+    "fmcg": 12.0,
+    "travel": 16.0,
+    "telco": 14.0,
+}
+DEFAULT_CPM = 15.0
+
+
+@mcp.tool
+def campaign_quote(
+    sector: Annotated[
+        str,
+        Field(description="Advertising sector, for example Travel or Finance"),
+    ],
+    impressions: Annotated[
+        int,
+        Field(description="Requested number of advertising impressions"),
+    ],
+) -> dict:
+    """Return the authoritative price for one campaign scenario."""
+    if impressions <= 0:
+        return {"error": "impressions must be greater than zero"}
+
+    normalized_sector = sector.strip().lower()
+    cpm_eur = CPM_BY_SECTOR.get(normalized_sector, DEFAULT_CPM)
+    used_default_rate = normalized_sector not in CPM_BY_SECTOR
+    total_eur = impressions / 1000 * cpm_eur
+
+    return {
+        "sector": sector,
+        "impressions": impressions,
+        "cpm_eur": cpm_eur,
+        "total_eur": round(total_eur, 2),
+        "used_default_rate": used_default_rate,
+    }
 
 
 @mcp.tool

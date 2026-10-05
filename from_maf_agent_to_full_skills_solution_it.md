@@ -649,7 +649,7 @@ i criteri aziendali verranno implementati da un agente A2A dedicato.
 
 ### 6.1 Aggiungere `campaign_quote` al server MCP
 
-Aggiungi il tool seguente a `agent_campaign_mcp.py`:
+Aggiungiamo la funzione `campaign_quote` come tool all'interno del file `agent_campaign_mcp.py` che già contiene i tool usati in precedenza:
 
 ```python
 CPM_BY_SECTOR = {
@@ -691,8 +691,8 @@ def campaign_quote(
     }
 ```
 
-Mantieni questo tool atomico. Calcola esattamente uno scenario e non contiene
-i criteri di preventivazione di livello superiore.
+Mantieniamo volutamente "atomico" questo tool, che calcola esattamente uno scenario e **non** contiene
+i criteri di preventivazione di livello superiore, che definiamo nel punto qui sotto. 
 
 ### 6.2 Definire i criteri di preventivazione
 
@@ -709,13 +709,13 @@ Il servizio di pricing deve applicare i criteri seguenti:
 6. Avvisare quando viene usata la tariffa predefinita del settore.
 7. Presentare i tre scenari in una tabella di confronto.
 
-I criteri sono intenzionalmente più complessi dello schema del tool MCP. In
-questo modo l'agente A2A è responsabile di una procedura reale, anziché limitarsi
-a inoltrare due argomenti.
+I criteri sono intenzionalmente più complessi dello schema del tool MCP. In questo modo l'agente A2A è responsabile di una procedura reale, anziché limitarsi a inoltrare i due argomenti (*sector* e *impressions*).<br/>
+L'agente è responsabile per estrarre i due argomenti dalla domanda ricevuta; per questo motivo, tale agente deve disporre di un LLM, cosa che in linea teorica non è necessaria per un agente di tipo A2A, o per un hosted agent. Se per esempio avessimo richiesto che la domanda arrivi già codificata, o formalizzata in una forma facilmente interpretabile come regular expressions, avremmo potuto evitare la presenza dell'LLM.<br/>
+Tuttavia, **in un agente l'LLM è quasi sempre presente**, ed è il motivo per cui anche in questa implementazione lo abbiamo espressamente previsto. **Ciò permetterà nel passo successivo di apprezzare in maniera rappresentativa il `trasporto` di un agente A2A all'interno di uno skill**.
 
 ### 6.3 Creare l'agente A2A di pricing
 
-Crea `pricing_a2a_agent.py`:
+Creiamo `pricing_a2a_agent.py` con il seguente codice:
 
 ```python
 import os
