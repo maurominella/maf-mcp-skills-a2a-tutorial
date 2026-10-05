@@ -227,7 +227,7 @@ stessa applicazione e non devono essere condivise.
 
 ## Passaggio 3 — Spostare i tool in un server MCP
 
-Sposta ora le tre funzioni in un server MCP separato denominato
+Spostiamo ora le tre funzioni in un server MCP separato denominato
 `agent_campaign_mcp`.
 
 Crea `agent_campaign_mcp.py`:
@@ -239,7 +239,7 @@ from typing import Annotated
 from fastmcp import FastMCP
 from pydantic import Field
 
-from campaign_data import get_campaign, list_campaigns
+from asb_campaign import get_campaign, list_campaigns
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("AdvertSphere Campaign MCP")
@@ -291,49 +291,66 @@ if __name__ == "__main__":
     mcp.run(transport="http", host="127.0.0.1", port=8000)
 ```
 
-Avvia il server MCP:
+Avviamo il server MCP:
 
 ```bash
 .venv/bin/python labs/solutions/agent_campaign_mcp.py
 ```
-
-Sostituisci i tre tool locali dell'agente principale con una connessione MCP:
-
-```python
-from agent_framework import Agent, MCPStreamableHTTPTool
-
-campaign_mcp = MCPStreamableHTTPTool(
-    name="agent_campaign_mcp",
-    url="http://127.0.0.1:8000/mcp",
-    allowed_tools={
-        "all_campaigns",
-        "campaign_metrics",
-        "compute_roi",
-    },
-    approval_mode="never_require",
-    load_prompts=False, # when True, the MCP client automatically loads the MCP prompt resources, not only the toolw
-)
-
-agent = Agent(
-    client=client,
-    name="CampaignAnalyst",
-    description="Analyzes advertising campaign performance.",
-    instructions=(
-        "You are an analyst at AdvertSphere Broadcasting. "
-        "Always answer in English, concisely and professionally."
-    ),
-    tools=[campaign_mcp],
-)
-
-async with agent:
-    answer = await agent.run(
-        "Between CMP-004 and CMP-005, which campaign has the better ROI?"
-    )
-
-print(answer.text)
+```text
+[10/05/26 14:50:05] INFO     Starting MCP server 'AdvertSphere Campaign MCP' with transport 'http' on              transport.py:361
+                             http://127.0.0.1:8000/mcp                                                                             
+INFO:     Started server process [100965]
+INFO:     Waiting for application startup.
+INFO:mcp.server.streamable_http_manager:StreamableHTTP session manager started
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ```
 
-`tools=[campaign_mcp]` non nasconde i singoli tool all'LLM. Durante
+Lato agente, all'interno di `async def main()`:
+- aggiungiamo il riferimento al server MCP utilizzando `MCPStreamableHTTPTool`
+- sostituiamo i tre tool locali dell'agente principale con una connessione MCP
+- wrappiamo l'esecuzione dell'agente in una operazione asincrona
+
+```python
+async def main() -> None:
+    from agent_framework import Agent, MCPStreamableHTTPTool
+    campaign_mcp = MCPStreamableHTTPTool(
+        name="agent_campaign_mcp",
+        url="http://127.0.0.1:8000/mcp",
+        allowed_tools={
+            "all_campaigns",
+            "campaign_metrics",
+            "compute_roi",
+        },
+        approval_mode="never_require",
+        load_prompts=False,  # When True, also load MCP prompt resources, not only tools.
+    )
+    
+    openai_client = OpenAIChatClient(
+        model=os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
+        credential=DefaultAzureCredential(exclude_environment_credential=True),
+    )
+
+    maf_agent = Agent(
+        client=openai_client,
+        name="CampaignAnalyst",
+        description="Analyzes advertising campaign performance.",
+        instructions=(
+            "You are an analyst at AdvertSphere Broadcasting. "
+            "Always answer in English, concisely and professionally."
+        ),
+        tools=[campaign_mcp],
+    )
+
+    async with maf_agent:
+        answer = await maf_agent.run(
+            "Between CMP-004 and CMP-005, which campaign has the better ROI?"
+        )
+    print(answer.text)
+    return answer.text
+```
+
+Notiamo che `tools=[campaign_mcp]` non nasconde i singoli tool all'LLM. Durante
 l'individuazione MCP, MAF ottiene i nomi, le descrizioni e gli schemi di input
 esposti dal server. Il modello continua a vedere le tre funzionalità
 richiamabili:
