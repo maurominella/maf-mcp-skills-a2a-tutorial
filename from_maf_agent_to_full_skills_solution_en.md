@@ -113,20 +113,20 @@ import os
 
 from agent_framework import Agent
 from agent_framework.openai import OpenAIChatClient
-from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 async def main() -> None:
-    client = OpenAIChatClient(
+    openai_client = OpenAIChatClient(
         model=os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
-        credential=AzureCliCredential(),
+        credential=DefaultAzureCredential(exclude_environment_credential=True),
     )
 
-    agent = Agent(
-        client=client,
+    maf_agent = Agent(
+        client=openai_client,
         name="CampaignAnalyst",
         description="Analyzes advertising campaign performance.",
         instructions=(
@@ -135,7 +135,7 @@ async def main() -> None:
         ),
     )
 
-    answer = await agent.run(
+    answer = await maf_agent.run(
         "Review campaign CMP-004 and calculate its ROI."
     )
     print(answer.text)
@@ -145,9 +145,10 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-The agent can explain ROI in general, but it cannot retrieve authoritative
-campaign data. If it answers with campaign-specific values, those values are
-not grounded in the application data.
+The example runs successfully. However, the agent can explain ROI in general
+but cannot retrieve authoritative campaign data. We therefore expect an answer
+such as *I can help calculate ROI for CMP-004, but I don’t have the campaign's
+performance data in this chat*.
 
 At this stage, the architecture is:
 
@@ -171,22 +172,22 @@ Add three deterministic functions to the same source file:
 - `campaign_metrics`;
 - `compute_roi`.
 
-Assume that `get_campaign` and `list_campaigns` come from the existing
-campaign dataset.
+In this example, `all_campaigns` and `campaign_metrics` use functions
+implemented in `asb_campaign.py` solely to make the exercise executable. In a
+real application, these functions should query the authoritative campaign
+dataset. Add this code near the beginning of the module, immediately after
+`load_dotenv()`:
 
 ```python
 from typing import Annotated
 
 from pydantic import Field
-
-from campaign_data import get_campaign, list_campaigns
+from asb_campaign import get_campaign, list_campaigns
 
 
 def all_campaigns() -> list:
     """List the id, client, and sector of every campaign."""
     return list_campaigns()
-
-
 def campaign_metrics(
     campaign_id: Annotated[
         str,
@@ -218,11 +219,12 @@ def compute_roi(
     return {"roi_pct": round(roi_pct, 1)}
 ```
 
-Register them when creating the agent:
+Agent Framework can register these functions when creating the agent by
+passing them to the `tools` parameter:
 
 ```python
-agent = Agent(
-    client=client,
+maf_agent = Agent(
+    client=openai_client,
     name="CampaignAnalyst",
     description="Analyzes advertising campaign performance.",
     instructions=(
@@ -270,7 +272,7 @@ from typing import Annotated
 from fastmcp import FastMCP
 from pydantic import Field
 
-from campaign_data import get_campaign, list_campaigns
+from asb_campaign import get_campaign, list_campaigns
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("AdvertSphere Campaign MCP")
@@ -328,40 +330,61 @@ Start the MCP server:
 .venv/bin/python labs/solutions/agent_campaign_mcp.py
 ```
 
-Replace the three local tools in the main agent with one MCP connection:
+The output confirms that the HTTP MCP endpoint is running:
+
+```text
+[10/05/26 14:50:05] INFO     Starting MCP server 'AdvertSphere Campaign MCP' with transport 'http' on              transport.py:361
+                             http://127.0.0.1:8000/mcp
+INFO:     Started server process [100965]
+INFO:     Waiting for application startup.
+INFO:mcp.server.streamable_http_manager:StreamableHTTP session manager started
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
+
+In the agent's `async def main()`:
+
+- add the MCP server through `MCPStreamableHTTPTool`;
+- replace the main agent's three local tools with one MCP connection;
+- wrap the agent execution in an asynchronous context manager.
 
 ```python
-from agent_framework import Agent, MCPStreamableHTTPTool
-
-campaign_mcp = MCPStreamableHTTPTool(
-    name="agent_campaign_mcp",
-    url="http://127.0.0.1:8000/mcp",
-    allowed_tools={
-        "all_campaigns",
-        "campaign_metrics",
-        "compute_roi",
-    },
-    approval_mode="never_require",
-    load_prompts=False,  # When True, also load MCP prompt resources, not only tools.
-)
-
-agent = Agent(
-    client=client,
-    name="CampaignAnalyst",
-    description="Analyzes advertising campaign performance.",
-    instructions=(
-        "You are an analyst at AdvertSphere Broadcasting. "
-        "Always answer in English, concisely and professionally."
-    ),
-    tools=[campaign_mcp],
-)
-
-async with agent:
-    answer = await agent.run(
-        "Between CMP-004 and CMP-005, which campaign has the better ROI?"
+async def main() -> None:
+    from agent_framework import Agent, MCPStreamableHTTPTool
+    campaign_mcp = MCPStreamableHTTPTool(
+        name="agent_campaign_mcp",
+        url="http://127.0.0.1:8000/mcp",
+        allowed_tools={
+            "all_campaigns",
+            "campaign_metrics",
+            "compute_roi",
+        },
+        approval_mode="never_require",
+        load_prompts=False,  # When True, also load MCP prompt resources, not only tools.
     )
 
-print(answer.text)
+    openai_client = OpenAIChatClient(
+        model=os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
+        credential=DefaultAzureCredential(exclude_environment_credential=True),
+    )
+
+    maf_agent = Agent(
+        client=openai_client,
+        name="CampaignAnalyst",
+        description="Analyzes advertising campaign performance.",
+        instructions=(
+            "You are an analyst at AdvertSphere Broadcasting. "
+            "Always answer in English, concisely and professionally."
+        ),
+        tools=[campaign_mcp],
+    )
+
+    async with maf_agent:
+        answer = await maf_agent.run(
+            "Between CMP-004 and CMP-005, which campaign has the better ROI?"
+        )
+    print(answer.text)
+    return answer.text
 ```
 
 `tools=[campaign_mcp]` does not hide the individual tools from the LLM. During
@@ -526,29 +549,57 @@ For a focused comparison, provide a concise metrics table, explain the relevant
 trade-offs, and answer the user's question directly.
 ```
 
-Register a `SkillsProvider`:
+Register a `SkillsProvider` and add it to the agent:
 
 ```python
-from pathlib import Path
+async def main() -> None:
+    from pathlib import Path
 
-from agent_framework import SkillsProvider
+    from agent_framework import SkillsProvider
 
-skills_provider = SkillsProvider.from_paths(
-    Path(__file__).parent / "skills",
-    disable_load_skill_approval=True,
-)
+    skills_provider = SkillsProvider.from_paths(
+        Path(__file__).parent / "skills",
+        disable_load_skill_approval=True,
+    )
 
-agent = Agent(
-    client=client,
-    name="CampaignAnalyst",
-    description="Analyzes advertising campaign performance.",
-    instructions=(
-        "You are an analyst at AdvertSphere Broadcasting. "
-        "Always answer in English, concisely and professionally."
-    ),
-    tools=[campaign_mcp],
-    context_providers=[skills_provider],
-)
+    from agent_framework import Agent, MCPStreamableHTTPTool
+    campaign_mcp = MCPStreamableHTTPTool(
+        name="agent_campaign_mcp",
+        url="http://127.0.0.1:8000/mcp",
+        allowed_tools={
+            "all_campaigns",
+            "campaign_metrics",
+            "compute_roi",
+        },
+        approval_mode="never_require",
+        load_prompts=False,  # When True, also load MCP prompt resources, not only tools.
+    )
+
+    openai_client = OpenAIChatClient(
+        model=os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT_NAME"],
+        credential=DefaultAzureCredential(exclude_environment_credential=True),
+    )
+
+    maf_agent = Agent(
+        client=openai_client,
+        name="CampaignAnalyst",
+        description="Analyzes advertising campaign performance.",
+        instructions=(
+            "You are an analyst at AdvertSphere Broadcasting. "
+            "Always answer in English, concisely and professionally."
+        ),
+        tools=[campaign_mcp],
+        context_providers=[skills_provider],
+    )
+
+    async with maf_agent:
+        response = await maf_agent.run(
+            "Review the entire campaign portfolio and recommend which campaign "
+            "should receive additional budget next quarter."
+        )
+        print(response.text)
+
+    return response.text
 ```
 
 The skill follows progressive disclosure:
@@ -568,6 +619,46 @@ Repeat the Step 4 prompt and evaluate the same criteria. The intended
 improvement is not that the agent suddenly gains new data or calculations.
 The improvement is that the existing capabilities are used through a
 consistent, reusable workflow.
+
+A typical response is substantially more standardized and adheres to the
+requested format:
+
+___
+### Executive summary
+
+After reviewing the full portfolio, **CMP-004 (VoloBlu, Travel)** should receive additional budget next quarter. It delivers the strongest combination of **profitability, scale, and conversion volume** across the portfolio.
+
+While **CMP-003 (FreschErba)** has the lowest budget and strong efficiency, it is smaller in absolute revenue impact. **CMP-004** is the best candidate for incremental investment because it leads on **ROI, revenue, and conversions**.
+
+### Metrics table
+
+| Campaign | Client | Sector | Budget (€) | Revenue (€) | Conversions | ROI | Revenue / Budget | Notes |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| CMP-001 | AutoMilano | Automotive | 120,000 | 210,000 | 1,260 | 75.0% | 1.75x | Solid all-rounder |
+| CMP-002 | BancaVerde | Finance | 90,000 | 132,000 | 612 | 46.7% | 1.47x | Moderate performance |
+| CMP-003 | FreschErba | FMCG | 60,000 | 96,000 | 1,700 | 60.0% | 1.60x | Very efficient, smaller scale |
+| CMP-004 | VoloBlu | Travel | 150,000 | 351,000 | 2,208 | 134.0% | 2.34x | Best overall performer |
+| CMP-005 | TeleCasa | Telco | 80,000 | 72,000 | 387 | -10.0% | 0.90x | Underperforming |
+
+### Trade-offs
+
+- **CMP-004** is the clear leader on **ROI** and also has the highest **revenue** and **conversions**, so it scales well and is profitable.
+- **CMP-003** is more efficient relative to budget, but its **absolute return is lower** than CMP-004, so it is better suited for controlled testing than major budget expansion.
+- **CMP-001** is respectable but trails CMP-004 on both profitability and scale.
+- **CMP-005** is losing money and should not receive additional budget without a major strategy change.
+
+### Recommendation
+
+**Allocate additional budget to CMP-004 (VoloBlu).**
+
+If budget is available for a secondary bet, **CMP-003** is the next-best candidate for a smaller incremental increase because of its strong efficiency, but **CMP-004 should be the primary recipient**.
+
+### Data limitations
+
+- The review is based on the metrics provided by the portfolio tools.
+- No breakdown was available by audience, channel, or creative variant beyond the campaign-level channel label.
+- No margin or lifetime value data was provided, so this recommendation is based on **revenue and ROI**, not net profit.
+___
 
 ---
 
@@ -649,11 +740,20 @@ The pricing service must apply the following policy:
 
 The policy is intentionally more complex than the MCP tool schema. This makes
 the A2A agent responsible for a real procedure, rather than merely forwarding
-two arguments.
+the two arguments (*sector* and *impressions*).
+
+The agent is responsible for extracting those arguments from the request, so
+it needs an LLM. An LLM is not theoretically required for every A2A or hosted
+agent: if the request arrived in an already encoded form, or in a form that
+could be interpreted reliably with regular expressions, it could be omitted.
+In practice, however, **agents nearly always include an LLM**. Including it
+here makes the next step a representative demonstration of moving an A2A
+agent's behavior into a skill.
 
 ### 6.3 Create the A2A pricing agent
 
-Create `pricing_a2a_agent.py`:
+Create `pricing_a2a_agent.py`. Its instructions contain the advanced quotation
+policy defined above:
 
 ```python
 import os
@@ -727,7 +827,7 @@ agent_card = AgentCard(
     skills=[pricing_skill],
     supported_interfaces=[
         AgentInterface(
-            url="http://127.0.0.1:9999/",
+            url="http://127.0.0.1:9000/",
             protocol_binding="JSONRPC",
         )
     ],
@@ -756,7 +856,7 @@ app = Starlette(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=9999)
+    uvicorn.run(app, host="127.0.0.1", port=9000)
 ```
 
 This agent is genuinely LLM-backed:
@@ -771,6 +871,54 @@ Start it after starting the MCP server:
 
 ```bash
 .venv/bin/python labs/solutions/pricing_a2a_agent.py
+```
+
+Uvicorn exposes the agent through HTTP, while its
+[ASGI (Asynchronous Server Gateway Interface)](https://uvicorn.dev/concepts/asgi/)
+integration invokes `pricing_agent` with the user's input and any
+authentication information, which this tutorial does not use. MAF exposes the
+agent through two routes: `/` for invocation and
+`/.well-known/agent-card.json` for the Agent Card:
+
+```json
+{
+  "name": "AdvertSphere Pricing Agent",
+  "description": "A policy-aware advertising pricing agent.",
+  "supportedInterfaces": [
+    {
+      "url": "http://127.0.0.1:9000/",
+      "protocolBinding": "JSONRPC"
+    }
+  ],
+  "version": "1.0.0",
+  "capabilities": {
+
+  },
+  "defaultInputModes": [
+    "text"
+  ],
+  "defaultOutputModes": [
+    "text"
+  ],
+  "skills": [
+    {
+      "id": "campaign-quotation",
+      "name": "Campaign quotation",
+      "description": "Creates lean, requested, and extended campaign quotation scenarios.",
+      "tags": [
+        "pricing",
+        "advertising",
+        "quotation"
+      ],
+      "examples": [
+        "Create a quote for a Travel campaign with 9,200,000 impressions."
+      ]
+    }
+  ],
+  "preferredTransport": "JSONRPC",
+  "protocolVersion": "0.3",
+  "url": "http://127.0.0.1:9000/"
+}
 ```
 
 ### 6.4 Expose the A2A agent as a tool
@@ -800,7 +948,7 @@ from agent_framework.a2a import A2AAgent
 remote_pricing_agent = A2AAgent(
     name="PricingAgent",
     description="Creates policy-compliant campaign quotation scenarios.",
-    url="http://127.0.0.1:9999",
+    url="http://127.0.0.1:9000",
 )
 
 pricing_tool = remote_pricing_agent.as_tool(
@@ -817,28 +965,42 @@ pricing_tool = remote_pricing_agent.as_tool(
 )
 ```
 
-Register both the performance MCP connection and the A2A tool:
+Now register the A2A tool alongside the existing MCP connection:
 
 ```python
-agent = Agent(
-    client=client,
-    name="CampaignAnalyst",
-    description="Analyzes campaigns and coordinates campaign services.",
-    instructions=(
-        "You are an analyst at AdvertSphere Broadcasting. "
-        "Always answer in English, concisely and professionally."
-    ),
-    tools=[campaign_mcp, pricing_tool],
-    context_providers=[skills_provider],
-)
-
-async with remote_pricing_agent, agent:
-    answer = await agent.run(
-        "Create a quote for a Travel campaign with 9,200,000 impressions."
+    maf_agent = Agent(
+        client=openai_client,
+        name="CampaignAnalyst",
+        description="Analyzes advertising campaign performance.",
+        instructions=(
+            "You are an analyst at AdvertSphere Broadcasting. "
+            "Always answer in English, concisely and professionally."
+        ),
+        tools=[campaign_mcp, pricing_tool],
+        context_providers=[skills_provider],
     )
 
-print(answer.text)
+    async with maf_agent:
+        response = await maf_agent.run(
+            "Create a quote for a Travel campaign with 9,200,000 impressions."
+        )
+        print(response.text)
 ```
+
+The result is consistent with the A2A agent's instructions:
+
+---
+Here is the quote for the Travel campaign:
+
+| Scenario | Impressions | CPM (EUR) | Total (EUR) |
+|---|---:|---:|---:|
+| Lean | 7,360,000 | 16.00 | 117,760.00 |
+| Requested | 9,200,000 | 16.00 | 147,200.00 |
+| Extended | 11,040,000 | 16.00 | 176,640.00 |
+
+Requested quote: **EUR 147,200.00**.
+
+---
 
 The runtime path is:
 
@@ -860,12 +1022,23 @@ Main agent LLM integrates the result
 User
 ```
 
+In other words, answering this request involves four LLM calls plus one HTTP
+call to the A2A service and one MCP tool interaction:
+
+- one main-agent LLM call that selects the A2A tool;
+- one HTTP call to A2A, including parameter serialization and deserialization;
+- one LLM call inside the A2A agent that selects the MCP pricing tool;
+- one MCP pricing tool interaction, comprising the required scenario calls;
+- one LLM call inside the A2A agent that formats the pricing tool response;
+- one final main-agent LLM call that turns the A2A response into the user-facing answer.
+
 This architecture is justified when the pricing agent represents a real
 autonomous boundary: a separately owned service, an independent approval
 process, a stateful negotiation, or a long-running task.
 
-For this tutorial, however, its policy can also be performed by the main
-agent. Step 7 explores that optimization.
+If those requirements do not apply, the invocation chain can be shortened by
+moving the A2A agent's behavior into a skill loaded by the main agent. Step 7
+explores that optimization.
 
 ---
 
@@ -882,7 +1055,8 @@ The A2A implementation works, but it adds:
 - another lifecycle, health, authentication, and retry boundary.
 
 The quotation policy is deterministic enough to be transferred to a skill.
-The main agent can then call `campaign_quote` directly.
+That skill instructs the main agent to call `campaign_quote` directly,
+effectively removing the A2A agent from the architecture.
 
 This does not eliminate LLM usage. The main LLM still:
 
@@ -988,25 +1162,42 @@ skills_provider = SkillsProvider.from_paths(
 Remove the A2A proxy and its tool:
 
 ```python
-agent = Agent(
-    client=client,
-    name="CampaignAnalyst",
-    description="Analyzes campaigns and creates policy-compliant quotations.",
-    instructions=(
-        "You are an analyst at AdvertSphere Broadcasting. "
-        "Always answer in English, concisely and professionally."
-    ),
-    tools=[campaign_mcp],
-    context_providers=[skills_provider],
-)
-
-async with agent:
-    answer = await agent.run(
-        "Create a quote for a Travel campaign with 9,200,000 impressions."
+    maf_agent = Agent(
+        client=openai_client,
+        name="CampaignAnalyst",
+        description="Analyzes advertising campaign performance.",
+        instructions=(
+            "You are an analyst at AdvertSphere Broadcasting. "
+            "Always answer in English, concisely and professionally."
+        ),
+        tools=[campaign_mcp],
+        context_providers=[skills_provider],
     )
 
-print(answer.text)
+    async with maf_agent:
+        response = await maf_agent.run(
+            "Create a quote for a Pets campaign with 10,000,000 impressions."
+        )
+        print(response.text)
 ```
+
+Run the new test. Because **Pets** is not a configured category, it
+demonstrates that the default CPM was used:
+
+---
+Here is an indicative quotation for a Pets campaign at 10,000,000 impressions.
+
+| Scenario | Impressions | CPM | Total price |
+|---|---:|---:|---:|
+| Lean | 8,000,000 | €15.00 | €120,000.00 |
+| Requested | 10,000,000 | €15.00 | €150,000.00 |
+| Extended | 12,000,000 | €15.00 | €180,000.00 |
+
+Default-rate warning: the Pets sector was priced with the default CPM.
+
+These figures are indicative quotations, not an approved commercial offer.
+
+---
 
 The optimized runtime path is:
 
