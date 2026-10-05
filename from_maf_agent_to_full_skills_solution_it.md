@@ -931,20 +931,19 @@ Ora che il tool è disponibile, aggiungiamo -alla connessione MCP già presente-
         instructions=(
             "You are an analyst at AdvertSphere Broadcasting. "
             "Always answer in English, concisely and professionally."
-        ),
+        ),            
         tools=[campaign_mcp, pricing_tool],
         context_providers=[skills_provider],
     )
 
     async with maf_agent:
         response = await maf_agent.run(
-            "Review the entire campaign portfolio and recommend which campaign "
-            "should receive additional budget next quarter."
+            "Create a quote for a Travel campaign with 9,200,000 impressions."
         )
         print(response.text)
 ```
 
-### Questo è il risultato che otteniamo:
+#### Questo è il risultato che otteniamo, in linea con le istruzioni dell'agente A2A:
 ---
 Here is the quote for the Travel campaign:
 
