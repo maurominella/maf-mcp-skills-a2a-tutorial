@@ -1,0 +1,29 @@
+# =====================================================================
+# AdvertSphere Broadcasting - AI Upskilling - Exercises
+# SINGLE requirements.txt, valid for all four exercises.
+# (Creating/activating the environment was already covered: this only
+#  installs the packages.)
+# Here are the latest library versions as of now, September 26, 2026.
+# =====================================================================
+
+# --- Exercise 1: Microsoft Agent Framework ---
+agent-framework==1.19.0
+
+# --- Exercise 2: Microsoft Foundry (Responses API / Hosted Agents) ---
+azure-ai-projects==2.6.1
+azure-identity==1.26.0b2
+aiohttp==3.14.3
+openai==3.19.2
+
+# --- Exercise 3: Model Context Protocol (MCP) ---
+fastmcp==3.4.7
+mcp==1.30.0
+
+# --- Exercise 4: Agent-to-Agent (A2A) ---
+a2a-sdk==1.1.5
+uvicorn==0.54.0
+httpx==0.28.1
+
+# --- Common utilities (campaign data, readable output, .env variables) ---
+python-dotenv==1.2.3
+rich==15.0.0

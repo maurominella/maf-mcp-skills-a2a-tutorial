@@ -1,0 +1,28 @@
+# =====================================================================
+# AdvertSphere Broadcasting - AI Upskilling - Exercises
+# SINGLE requirements.txt, valid for all four exercises.
+# (Creating/activating the environment was already covered: this only
+#  installs the packages.)
+# =====================================================================
+
+# --- Microsoft Agent Framework ---
+agent-framework
+
+# --- Microsoft Foundry (OpenAI Endpoints / Responses API / Hosted Agents) ---
+azure-ai-projects
+azure-identity
+aiohttp
+openai
+
+# --- Model Context Protocol (MCP) ---
+fastmcp
+mcp
+
+# --- Agent-to-Agent (A2A) ---
+a2a-sdk
+uvicorn
+httpx
+
+# --- Common utilities (campaign data, readable output, .env variables) ---
+python-dotenv
+rich
