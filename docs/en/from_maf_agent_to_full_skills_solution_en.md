@@ -1,63 +1,63 @@
-# From a MAF Agent to a Full Skills-Based Solution
+# Evolving a MAF Agent into a Complete Skills-Based Solution
 
-AI skills were [announced by Anthropic](https://claude.com/blog/skills) in
-October 2025 and spread very rapidly. The key—and far from obvious—question is
-now where they make sense, because the capabilities they provide already
-existed before skills. Skills can therefore be considered an alternative to a
-system prompt or to tools and, in some cases, even a way to optimize
-multi-agent systems built around A2A.
+After [Anthropic announced AI skills](https://claude.com/blog/skills) in
+October 2025, adoption grew extremely quickly. The important—and not
+necessarily straightforward—question is where skills are the right choice,
+since their underlying capabilities were available before the concept of
+skills emerged. Depending on the scenario, a skill may complement or replace
+parts of a system prompt, overlap with tools, or even streamline an A2A-based
+multi-agent architecture.
 
-To explain how to manage these potential overlaps while also showing how to
-use skills in practice, this tutorial is aimed at developers and solution
-architects. It starts with a minimal Microsoft Agent Framework (MAF) agent and
-builds a complete skills-based solution through function calling, tools, an
-MCP server, and A2A.
+This tutorial helps developers and solution architects understand these
+overlaps while learning to implement skills in a practical setting. Beginning
+with a minimal Microsoft Agent Framework (MAF) agent, it gradually introduces
+function calling, tools, an MCP server, and A2A to arrive at a complete
+skills-based solution.
 
-The scenario follows an analyst at AdvertSphere Broadcasting, a fictitious
-company that sells advertising space for a television network.
+The example centers on an analyst working for AdvertSphere Broadcasting, an
+imaginary company that markets advertising inventory for a television
+network.
 
-Across seven incremental steps, described and implemented in this public
-GitHub repository, you will build a complete solution from scratch that gives
-the analyst:
+The public GitHub repository implements seven progressive stages. By following
+them, you will create a solution from the ground up that provides the analyst
+with:
 
-- access to authoritative campaign data;
-- consistent portfolio reviews;
-- a campaign quotation service.
+- authoritative advertising campaign information;
+- repeatable portfolio assessments;
+- a service for generating campaign quotations.
 
-In the final part of the tutorial, you will first implement the solution with
-a multi-agent approach based on
-[A2A, announced by Google six months before skills](https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/).
-This approach remains entirely valid today, but skills now give us an
-opportunity to evaluate a possible optimization in some cases: effectively
-moving the A2A agent's capabilities into a skill and using the orchestrating
-agent's LLM.
+In the last part, the solution is first built as a multi-agent system using
+[A2A, which Google introduced six months before skills](https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/).
+That design is still fully valid. Skills, however, make it possible to assess
+an optimization for suitable cases: transferring the A2A agent's behavior to
+a skill and relying on the orchestrating agent's LLM instead.
 
-Follow the steps in order if you want to implement the solution end to end. If
-you are using the tutorial as an architecture reference, use the table of
-contents to jump directly to the pattern or comparison you need.
+For a complete implementation, work through the steps sequentially. When using
+the tutorial only as an architectural reference, the table of contents can
+take you directly to a particular pattern or comparison.
 
-The table of contents, requirements, and environment setup follow. Then we
-will begin with the first implementation step: creating a minimal Agent
-Framework agent.
+The next sections cover navigation, prerequisites, and environment
+preparation, followed by the first implementation task: building a minimal
+Agent Framework agent.
 
 ## Table of contents
 
 - [Prerequisites](#prerequisites)
-- [Step 1 — Create a minimal MAF agent](#step-1)
-- [Step 2 — Add local function tools](#step-2)
-- [Step 3 — Move the tools to an MCP server](#step-3)
-- [Step 4 — Observe inconsistent orchestration](#step-4)
-- [Step 5 — Add the `campaign-performance-review` skill](#step-5)
-- [Step 6 — Add an LLM-backed A2A pricing agent](#step-6)
-- [Step 7 — Replace the A2A pricing agent with a skill](#step-7)
-- [Compare the A2A and skills-based versions](#comparison)
+- [Step 1 — Build a minimal MAF agent](#step-1)
+- [Step 2 — Introduce local function tools](#step-2)
+- [Step 3 — Transfer the tools to an MCP server](#step-3)
+- [Step 4 — Examine orchestration inconsistencies](#step-4)
+- [Step 5 — Introduce the `campaign-performance-review` skill](#step-5)
+- [Step 6 — Introduce an LLM-powered A2A pricing agent](#step-6)
+- [Step 7 — Substitute a skill for the A2A pricing agent](#step-7)
+- [Comparison of the A2A and skill-based approaches](#comparison)
 - [Conclusions](#conclusions)
 
 <a id="prerequisites"></a>
 
 ## Prerequisites
 
-This tutorial assumes:
+Before starting, ensure the following are available:
 
 - Python 3.13 or later;
 - `agent-framework==1.19.0`;
@@ -68,14 +68,14 @@ This tutorial assumes:
   variables;
 - an authenticated Azure CLI session.
 
-The examples use the following variables:
+The examples rely on these environment variables:
 
 ```text
 AZURE_OPENAI_ENDPOINT
 AZURE_OPENAI_CHAT_DEPLOYMENT_NAME
 ```
 
-The suggested project layout is:
+The recommended project structure is:
 
 ```text
 labs/
@@ -90,22 +90,22 @@ labs/
         └── SKILL.md
 ```
 
-The exact filenames are not important. What matters is how responsibilities
-move across the seven stages.
+The precise filenames are secondary; the important point is how each of the
+seven stages redistributes responsibilities.
 
 ---
 
 <a id="step-1"></a>
 
-## Step 1 — Create a minimal MAF agent
+## Step 1 — Build a minimal MAF agent
 
-Start with an agent that has only:
+Begin with an agent configured with just:
 
-- a name;
-- instructions;
+- its name;
+- a set of instructions;
 - an LLM client.
 
-It has no tools, MCP connection, skills, or A2A agents.
+At this point there are no tools, skills, MCP connections, or A2A agents.
 
 ```python
 import asyncio
@@ -145,12 +145,12 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-The example runs successfully. However, the agent can explain ROI in general
-but cannot retrieve authoritative campaign data. We therefore expect an answer
-such as *I can help calculate ROI for CMP-004, but I don’t have the campaign's
-performance data in this chat*.
+The code executes successfully, but the agent can only discuss ROI in general
+terms because it cannot access authoritative campaign information. A likely
+response is therefore: *I can help calculate ROI for CMP-004, but the
+campaign's performance data is not available in this conversation*.
 
-At this stage, the architecture is:
+The initial architecture looks like this:
 
 ```text
 User
@@ -164,19 +164,18 @@ LLM
 
 <a id="step-2"></a>
 
-## Step 2 — Add local function tools
+## Step 2 — Introduce local function tools
 
-Add three deterministic functions to the same source file:
+Define three deterministic functions in the same module:
 
 - `all_campaigns`;
 - `campaign_metrics`;
 - `compute_roi`.
 
-In this example, `all_campaigns` and `campaign_metrics` use functions
-implemented in `asb_campaign.py` solely to make the exercise executable. In a
-real application, these functions should query the authoritative campaign
-dataset. Add this code near the beginning of the module, immediately after
-`load_dotenv()`:
+For this exercise, `all_campaigns` and `campaign_metrics` call functions from
+`asb_campaign.py` so the example can run as-is. In a production application,
+they would query the authoritative campaign data source. Insert the following
+code near the top of the module, directly after `load_dotenv()`:
 
 ```python
 from typing import Annotated
@@ -219,8 +218,8 @@ def compute_roi(
     return {"roi_pct": round(roi_pct, 1)}
 ```
 
-Agent Framework can register these functions when creating the agent by
-passing them to the `tools` parameter:
+Pass the functions through the `tools` parameter so Agent Framework registers
+them when the agent is created:
 
 ```python
 maf_agent = Agent(
@@ -235,9 +234,9 @@ maf_agent = Agent(
 )
 ```
 
-The LLM now receives the schemas generated from the functions, annotations,
-and docstrings. It can request a tool call, while MAF performs the actual
-function invocation.
+The LLM is now given schemas derived from the function definitions, type
+annotations, and docstrings. The model can ask to use a tool, and MAF executes
+the corresponding function.
 
 ```text
 User
@@ -251,19 +250,19 @@ MAF returns the tool result to the LLM
 LLM produces the answer
 ```
 
-This is an appropriate design while the capabilities belong to the same
-application and do not need to be shared.
+This design works well as long as the capabilities remain local to the
+application and no other system needs to consume them.
 
 ---
 
 <a id="step-3"></a>
 
-## Step 3 — Move the tools to an MCP server
+## Step 3 — Transfer the tools to an MCP server
 
-Now move the three functions into a separate MCP server named
+Next, place the three functions in an independent MCP server called
 `agent_campaign_mcp`.
 
-Create `agent_campaign_mcp.py`:
+Add a new `agent_campaign_mcp.py` file:
 
 ```python
 import logging
@@ -324,13 +323,13 @@ if __name__ == "__main__":
     mcp.run(transport="http", host="127.0.0.1", port=8000)
 ```
 
-Start the MCP server:
+Launch the MCP server:
 
 ```bash
 .venv/bin/python labs/agent_campaign_mcp.py
 ```
 
-The output confirms that the HTTP MCP endpoint is running:
+The following output indicates that the HTTP MCP endpoint is available:
 
 ```text
 [10/05/26 14:50:05] INFO     Starting MCP server 'AdvertSphere Campaign MCP' with transport 'http' on              transport.py:361
@@ -342,11 +341,11 @@ INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ```
 
-In the agent's `async def main()`:
+Within the agent's `async def main()` function:
 
-- add the MCP server through `MCPStreamableHTTPTool`;
-- replace the main agent's three local tools with one MCP connection;
-- wrap the agent execution in an asynchronous context manager.
+- connect to the MCP server using `MCPStreamableHTTPTool`;
+- replace the three local functions with a single MCP connection;
+- execute the agent inside an asynchronous context manager.
 
 ```python
 async def main() -> None:
@@ -387,9 +386,10 @@ async def main() -> None:
     return answer.text
 ```
 
-`tools=[campaign_mcp]` does not hide the individual tools from the LLM. During
-MCP discovery, MAF obtains the names, descriptions, and input schemas exposed
-by the server. The model still sees the three callable capabilities:
+Using `tools=[campaign_mcp]` does not conceal the underlying tools from the
+LLM. During MCP discovery, MAF retrieves the names, descriptions, and input
+schemas published by the server. The same three operations remain visible to
+the model:
 
 ```text
 all_campaigns()
@@ -397,7 +397,7 @@ campaign_metrics(campaign_id)
 compute_roi(revenue_eur, budget_eur)
 ```
 
-Only their implementation and execution location have changed:
+What changes is only where they are implemented and executed:
 
 ```text
 Local tools:
@@ -411,16 +411,16 @@ LLM → MAF → MCP request → MCP server → Python function
 
 <a id="step-4"></a>
 
-## Step 4 — Observe inconsistent orchestration
+## Step 4 — Examine orchestration inconsistencies
 
-Atomic questions are usually handled well because the tool schemas make the
-required operation obvious:
+The agent generally handles focused questions effectively because the tool
+schemas clearly indicate which operation is needed:
 
 ```text
 What is the ROI of CMP-004?
 ```
 
-The expected path is simple:
+The resulting sequence is straightforward:
 
 ```text
 campaign_metrics("CMP-004")
@@ -428,29 +428,30 @@ campaign_metrics("CMP-004")
 → answer
 ```
 
-Now use a broader question:
+Next, ask a more comprehensive question:
 
 ```text
 Review the entire campaign portfolio and recommend which campaign should
 receive additional budget next quarter.
 ```
 
-The agent has enough capabilities to answer, but it has not been given a
-standard review procedure. Across repeated runs or different models, it may:
+The agent has all the required capabilities, but no consistent review process
+has been defined for it. When the prompt is repeated or another model is used,
+the agent might:
 
-- rank campaigns only by ROI;
-- consider revenue but ignore conversions;
-- inspect only a subset of campaigns;
-- calculate some ROI values itself instead of using `compute_roi`;
-- omit data-quality limitations;
-- produce a table in one run and prose in another;
-- recommend a campaign without explaining the trade-off between profitability
+- base the ranking exclusively on ROI;
+- evaluate revenue while overlooking conversions;
+- review only some of the available campaigns;
+- compute certain ROI figures directly rather than calling `compute_roi`;
+- leave out caveats about data quality;
+- return a table in one execution and plain text in another;
+- make a recommendation without discussing the balance between profitability
   and scale.
 
-This is not an MCP problem. MCP correctly exposes the capabilities. The missing
-element is a reusable domain procedure.
+MCP is not the source of this behavior: it exposes the capabilities correctly.
+What is absent is a repeatable procedure for this business domain.
 
-Run the same prompt several times and inspect `response.messages`:
+Execute the same prompt multiple times, then examine `response.messages`:
 
 ```python
 prompt = (
@@ -468,30 +469,31 @@ async with agent:
             print(message)
 ```
 
-Do not claim that the behavior must be inconsistent on every run. Instead,
-measure whether the response consistently satisfies explicit criteria:
+The behavior should not be described as necessarily inconsistent in every
+execution. A better approach is to check whether each response reliably meets
+a set of well-defined criteria:
 
-| Criterion | Expected without a skill? |
+| Evaluation criterion | Reliable without a skill? |
 |---|---|
-| Every campaign is inspected | Not guaranteed |
-| Every ROI uses `compute_roi` | Not guaranteed |
-| Profitability and scale are both considered | Not guaranteed |
-| Data limitations are stated | Not guaranteed |
-| The same output structure is used | Not guaranteed |
+| All campaigns are reviewed | No guarantee |
+| Every ROI is obtained through `compute_roi` | No guarantee |
+| Both scale and profitability are evaluated | No guarantee |
+| Data constraints are acknowledged | No guarantee |
+| A consistent response structure is followed | No guarantee |
 
 ---
 
 <a id="step-5"></a>
 
-## Step 5 — Add the `campaign-performance-review` skill
+## Step 5 — Introduce the `campaign-performance-review` skill
 
-Create:
+Add this file:
 
 ```text
 skills/campaign-performance-review/SKILL.md
 ```
 
-with the following content:
+Use the following definition:
 
 ```markdown
 ---
@@ -504,52 +506,52 @@ description: >-
 
 # Campaign performance review
 
-Apply a consistent, evidence-based method to assess campaign performance.
-Base every conclusion on retrieved campaign data and make trade-offs explicit.
+Assess campaign performance with a repeatable, evidence-driven process.
+Support every conclusion with retrieved data and clearly describe trade-offs.
 
 ## Required tools
 
-- Use `all_campaigns` to identify the campaigns in the portfolio.
-- Use `campaign_metrics` to retrieve budget, impressions, conversions, and
-  revenue for a campaign.
-- Use `compute_roi` to calculate ROI from retrieved revenue and budget values.
+- Call `all_campaigns` to determine which campaigns belong to the portfolio.
+- Call `campaign_metrics` to obtain a campaign's budget, impressions,
+  conversions, and revenue.
+- Call `compute_roi` with the retrieved revenue and budget to obtain ROI.
 
-Do not invent missing tool results or replace `compute_roi` with a manual ROI
-calculation. If a required tool is unavailable or fails, identify the missing
-information and limit the analysis accordingly.
+Never fabricate unavailable tool output or substitute a manual ROI calculation
+for `compute_roi`. If a necessary tool fails or cannot be accessed, state what
+information is unavailable and restrict the analysis accordingly.
 
 ## Procedure
 
-1. For a portfolio-wide analysis, call `all_campaigns`; for a focused review,
-   start with the campaign identifiers supplied by the user.
-2. Call `campaign_metrics` for every campaign included in the analysis.
-3. Call `compute_roi` for every campaign whose revenue and budget are valid.
-4. Evaluate each campaign on:
-   - profitability: ROI;
-   - scale: revenue and conversions;
-   - efficiency: conversions relative to budget;
-   - data quality: missing or invalid values.
-5. Do not declare a campaign "best" using ROI alone unless the user explicitly
-   requests an ROI-only comparison.
-6. If ROI and scale suggest different winners, explain the trade-off.
-7. If required data is missing or invalid, identify the affected metrics and
-   do not rank the campaign on those metrics.
+1. For a complete portfolio assessment, begin with `all_campaigns`. For a
+   targeted review, use the campaign identifiers given by the user.
+2. Retrieve details with `campaign_metrics` for each campaign under review.
+3. Use `compute_roi` whenever a campaign has valid revenue and budget values.
+4. Assess every campaign according to:
+   - profitability, represented by ROI;
+   - scale, using revenue and conversions;
+   - efficiency, based on conversions in relation to budget;
+   - data quality, including absent or invalid values.
+5. Unless the user specifically asks for an ROI-only comparison, do not select
+   the "best" campaign based solely on ROI.
+6. Explain the compromise when scale and ROI point to different leaders.
+7. When required values are missing or invalid, name the affected metrics and
+   exclude the campaign from rankings based on them.
 
 ## Output format
 
-For a portfolio review or investment recommendation, return:
+For portfolio assessments and investment recommendations, provide:
 
-1. Executive summary
-2. Metrics table
-3. Trade-offs
-4. Recommendation
+1. An executive summary
+2. A metrics table
+3. A discussion of trade-offs
+4. A recommendation
 5. Data limitations
 
-For a focused comparison, provide a concise metrics table, explain the relevant
-trade-offs, and answer the user's question directly.
+For a targeted comparison, include a compact metrics table, describe the
+relevant trade-offs, and respond directly to the user's question.
 ```
 
-Register a `SkillsProvider` and add it to the agent:
+Create a `SkillsProvider` and register it with the agent:
 
 ```python
 async def main() -> None:
@@ -602,33 +604,33 @@ async def main() -> None:
     return response.text
 ```
 
-The skill follows progressive disclosure:
+The skill is made available through progressive disclosure:
 
-1. MAF advertises only `name` and `description`.
-2. The LLM determines that the skill is relevant.
-3. The LLM requests `load_skill("campaign-performance-review")`.
-4. MAF loads and returns the full `SKILL.md` body.
-5. The LLM interprets the procedure and requests the MCP tool calls.
-6. MAF executes those calls and returns the results.
-7. The LLM produces the standardized response.
+1. MAF initially exposes just the `name` and `description`.
+2. The LLM recognizes that the skill applies to the request.
+3. The model asks for `load_skill("campaign-performance-review")`.
+4. MAF retrieves and supplies the complete body of `SKILL.md`.
+5. The LLM follows the procedure and requests the appropriate MCP tools.
+6. MAF runs those tool calls and provides their output.
+7. The LLM formats the result using the standard response structure.
 
-The skill does not register the tools. It names and orchestrates tools that
-must already be available through `Agent(tools=[...])`.
+The skill itself does not make any tool available. It refers to and coordinates
+tools that must already have been supplied through `Agent(tools=[...])`.
 
-Repeat the Step 4 prompt and evaluate the same criteria. The intended
-improvement is not that the agent suddenly gains new data or calculations.
-The improvement is that the existing capabilities are used through a
-consistent, reusable workflow.
+Run the prompt from Step 4 again and assess it against the same criteria. The
+agent has not acquired additional data or computational abilities. Instead,
+the existing capabilities now operate within a consistent process that can be
+reused.
 
-A typical response is substantially more standardized and adheres to the
-requested format:
+A representative answer is much more structured and follows the required
+format:
 
 ___
 ### Executive summary
 
-After reviewing the full portfolio, **CMP-004 (VoloBlu, Travel)** should receive additional budget next quarter. It delivers the strongest combination of **profitability, scale, and conversion volume** across the portfolio.
+The complete portfolio review identifies **CMP-004 (VoloBlu, Travel)** as the strongest candidate for additional budget next quarter. Across all campaigns, it offers the best balance of **profitability, scale, and conversion volume**.
 
-While **CMP-003 (FreschErba)** has the lowest budget and strong efficiency, it is smaller in absolute revenue impact. **CMP-004** is the best candidate for incremental investment because it leads on **ROI, revenue, and conversions**.
+Although **CMP-003 (FreschErba)** operates efficiently with the smallest budget, its absolute revenue contribution is lower. **CMP-004** is therefore the preferred option for incremental investment because it ranks first in **ROI, revenue, and conversions**.
 
 ### Metrics table
 
@@ -642,43 +644,43 @@ While **CMP-003 (FreschErba)** has the lowest budget and strong efficiency, it i
 
 ### Trade-offs
 
-- **CMP-004** is the clear leader on **ROI** and also has the highest **revenue** and **conversions**, so it scales well and is profitable.
-- **CMP-003** is more efficient relative to budget, but its **absolute return is lower** than CMP-004, so it is better suited for controlled testing than major budget expansion.
-- **CMP-001** is respectable but trails CMP-004 on both profitability and scale.
-- **CMP-005** is losing money and should not receive additional budget without a major strategy change.
+- **CMP-004** leads decisively in **ROI**, while also generating the most **revenue** and **conversions**, demonstrating both scale and profitability.
+- **CMP-003** uses its budget efficiently, but produces a lower **absolute return** than CMP-004. It is therefore a better fit for limited experimentation than for a substantial budget increase.
+- **CMP-001** performs well overall, but remains behind CMP-004 in profitability and scale.
+- **CMP-005** currently generates a loss and should not receive more budget unless its strategy changes significantly.
 
 ### Recommendation
 
-**Allocate additional budget to CMP-004 (VoloBlu).**
+**Direct the additional budget to CMP-004 (VoloBlu).**
 
-If budget is available for a secondary bet, **CMP-003** is the next-best candidate for a smaller incremental increase because of its strong efficiency, but **CMP-004 should be the primary recipient**.
+If funds permit a secondary investment, the efficiency of **CMP-003** makes it suitable for a smaller increase. Nevertheless, **CMP-004 should remain the main recipient**.
 
 ### Data limitations
 
-- The review is based on the metrics provided by the portfolio tools.
-- No breakdown was available by audience, channel, or creative variant beyond the campaign-level channel label.
-- No margin or lifetime value data was provided, so this recommendation is based on **revenue and ROI**, not net profit.
+- The assessment uses only the metrics returned by the portfolio tools.
+- Apart from the campaign-level channel label, there is no detailed information by audience, channel, or creative variation.
+- Margin and customer lifetime value were not provided, so the recommendation relies on **revenue and ROI** rather than net profit.
 ___
 
 ---
 
 <a id="step-6"></a>
 
-## Step 6 — Add an LLM-backed A2A pricing agent
+## Step 6 — Introduce an LLM-powered A2A pricing agent
 
-The application now needs to quote a new advertising campaign from a brief such
-as:
+The next requirement is to generate a quotation for a new advertising campaign
+from a brief like this:
 
 ```text
 Create a quote for a Travel campaign with 9,200,000 impressions.
 ```
 
-The atomic pricing calculation belongs in the MCP server. The initial business
-policy, however, will be implemented by a dedicated A2A agent.
+The MCP server will remain responsible for the individual pricing calculation,
+while a dedicated A2A agent will initially handle the broader business rules.
 
-### 6.1 Add `campaign_quote` to the MCP server
+### 6.1 Introduce `campaign_quote` in the MCP server
 
-Add the following tool to `agent_campaign_mcp.py`:
+Define this additional tool in `agent_campaign_mcp.py`:
 
 ```python
 CPM_BY_SECTOR = {
@@ -720,40 +722,40 @@ def campaign_quote(
     }
 ```
 
-Keep this tool atomic. It calculates exactly one scenario and does not contain
-the higher-level quotation policy.
+The tool should remain atomic: it prices one scenario only and contains none
+of the higher-level quotation logic.
 
-### 6.2 Define the quotation policy
+### 6.2 Specify the quotation rules
 
-The pricing service must apply the following policy:
+The pricing service is expected to follow these rules:
 
-1. Extract sector and impressions from the request.
-2. Reject missing or non-positive impressions.
-3. Produce three scenarios:
-   - lean: 20% fewer impressions;
-   - requested: the requested impressions;
-   - extended: 20% more impressions.
-4. Use `campaign_quote` for every monetary value.
-5. Never calculate or modify the CPM directly.
-6. Warn when the default sector rate is used.
-7. Present the three scenarios in a comparison table.
+1. Read the sector and impression count from the request.
+2. Do not accept an absent impression count or a value that is not positive.
+3. Generate three alternatives:
+   - lean: 20% below the requested impressions;
+   - requested: the original impression count;
+   - extended: 20% above the requested impressions.
+4. Obtain every monetary amount through `campaign_quote`.
+5. Do not independently compute or alter the CPM.
+6. Indicate whenever the fallback sector rate is applied.
+7. Show all three alternatives in a comparison table.
 
-The policy is intentionally more complex than the MCP tool schema. This makes
-the A2A agent responsible for a real procedure, rather than merely forwarding
-the two arguments (*sector* and *impressions*).
+These rules deliberately go beyond what the MCP tool schema describes. The A2A
+agent therefore performs an actual procedure instead of simply passing along
+the two parameters, *sector* and *impressions*.
 
-The agent is responsible for extracting those arguments from the request, so
-it needs an LLM. An LLM is not theoretically required for every A2A or hosted
-agent: if the request arrived in an already encoded form, or in a form that
-could be interpreted reliably with regular expressions, it could be omitted.
-In practice, however, **agents nearly always include an LLM**. Including it
-here makes the next step a representative demonstration of moving an A2A
-agent's behavior into a skill.
+Because the agent must identify those values within a natural-language
+request, it relies on an LLM. In principle, not every A2A or hosted agent
+requires one: it could be left out if requests were already structured, or if
+regular expressions could parse them dependably. In real-world applications,
+however, **an LLM is present in nearly every agent**. Using one here makes the
+next step a realistic example of transferring an A2A agent's behavior into a
+skill.
 
-### 6.3 Create the A2A pricing agent
+### 6.3 Implement the A2A pricing agent
 
-Create `pricing_a2a_agent.py`. Its instructions contain the advanced quotation
-policy defined above:
+Create `pricing_a2a_agent.py` and place the quotation rules described above in
+the agent instructions:
 
 ```python
 import os
@@ -859,26 +861,26 @@ if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=9000)
 ```
 
-This agent is genuinely LLM-backed:
+This is a true LLM-powered agent because:
 
-1. its LLM interprets the natural-language request;
-2. it extracts sector and impressions;
-3. it applies the three-scenario policy;
-4. it requests three calls to the restricted MCP tool;
-5. it formats the response.
+1. the model understands the request written in natural language;
+2. it identifies the sector and number of impressions;
+3. it follows the policy for the three scenarios;
+4. it initiates three invocations of the restricted MCP tool;
+5. it prepares the resulting answer.
 
-Start it after starting the MCP server:
+Once the MCP server is running, launch the agent:
 
 ```bash
 .venv/bin/python labs/pricing_a2a_agent.py
 ```
 
-Uvicorn exposes the agent through HTTP, while its
+Uvicorn makes the agent available over HTTP. Through its
 [ASGI (Asynchronous Server Gateway Interface)](https://uvicorn.dev/concepts/asgi/)
-integration invokes `pricing_agent` with the user's input and any
-authentication information, which this tutorial does not use. MAF exposes the
-agent through two routes: `/` for invocation and
-`/.well-known/agent-card.json` for the Agent Card:
+integration, `pricing_agent` receives the user's input and any authentication
+details, although authentication is not used in this tutorial. MAF publishes
+two endpoints for the agent: `/` handles invocations, while
+`/.well-known/agent-card.json` serves the Agent Card:
 
 ```json
 {
@@ -921,10 +923,11 @@ agent through two routes: `/` for invocation and
 }
 ```
 
-### 6.4 Expose the A2A agent as a tool
+### 6.4 Make the A2A agent available as a tool
 
-The main agent must not see `campaign_quote` directly during this stage.
-Restrict its MCP connection to the original three performance tools:
+At this point, `campaign_quote` must not be directly accessible to the main
+agent. Keep its MCP connection limited to the original three performance
+tools:
 
 ```python
 campaign_mcp = MCPStreamableHTTPTool(
@@ -940,7 +943,7 @@ campaign_mcp = MCPStreamableHTTPTool(
 )
 ```
 
-Create an A2A proxy and convert it to a MAF tool:
+Set up an A2A proxy, then expose that proxy as a MAF tool:
 
 ```python
 from agent_framework.a2a import A2AAgent
@@ -965,7 +968,7 @@ pricing_tool = remote_pricing_agent.as_tool(
 )
 ```
 
-Now register the A2A tool alongside the existing MCP connection:
+Register the new A2A tool together with the MCP connection already in use:
 
 ```python
     maf_agent = Agent(
@@ -987,10 +990,10 @@ Now register the A2A tool alongside the existing MCP connection:
         print(response.text)
 ```
 
-The result is consistent with the A2A agent's instructions:
+The generated response follows the instructions assigned to the A2A agent:
 
 ---
-Here is the quote for the Travel campaign:
+The quotation for the Travel campaign is shown below:
 
 | Scenario | Impressions | CPM (EUR) | Total (EUR) |
 |---|---:|---:|---:|
@@ -998,11 +1001,11 @@ Here is the quote for the Travel campaign:
 | Requested | 9,200,000 | 16.00 | 147,200.00 |
 | Extended | 11,040,000 | 16.00 | 176,640.00 |
 
-Requested quote: **EUR 147,200.00**.
+The requested scenario totals **EUR 147,200.00**.
 
 ---
 
-The runtime path is:
+The request now travels through this execution path:
 
 ```text
 User
@@ -1022,57 +1025,59 @@ Main agent LLM integrates the result
 User
 ```
 
-In other words, answering this request involves four LLM calls plus one HTTP
-call to the A2A service and one MCP tool interaction:
+Overall, producing the answer requires four LLM calls, one HTTP request to the
+A2A service, and one interaction with the MCP tool:
 
-- one main-agent LLM call that selects the A2A tool;
-- one HTTP call to A2A, including parameter serialization and deserialization;
-- one LLM call inside the A2A agent that selects the MCP pricing tool;
-- one MCP pricing tool interaction, comprising the required scenario calls;
-- one LLM call inside the A2A agent that formats the pricing tool response;
-- one final main-agent LLM call that turns the A2A response into the user-facing answer.
+- the main agent first calls its LLM to choose the A2A tool;
+- an HTTP request reaches A2A, with parameters serialized and then deserialized;
+- the A2A agent calls its own LLM to select the MCP pricing tool;
+- the MCP pricing interaction performs the necessary calls for each scenario;
+- the A2A agent uses another LLM call to format the pricing result;
+- finally, the main agent calls its LLM again to convert the A2A result into
+  the response shown to the user.
 
-This architecture is justified when the pricing agent represents a real
-autonomous boundary: a separately owned service, an independent approval
-process, a stateful negotiation, or a long-running task.
+This design makes sense when the pricing agent forms a genuinely independent
+boundary, such as a service managed by another owner, a separate approval
+workflow, a stateful negotiation process, or a task that runs for a long time.
 
-If those requirements do not apply, the invocation chain can be shortened by
-moving the A2A agent's behavior into a skill loaded by the main agent. Step 7
-explores that optimization.
+When none of those conditions applies, the call chain can be simplified by
+turning the A2A agent's behavior into a skill that the main agent loads. That
+optimization is the subject of Step 7.
 
 ---
 
 <a id="step-7"></a>
 
-## Step 7 — Replace the A2A pricing agent with a skill
+## Step 7 — Substitute a skill for the A2A pricing agent
 
-The A2A implementation works, but it adds:
+Although the A2A solution works, it introduces:
 
-- a second deployed agent;
-- another LLM-backed reasoning loop;
-- an A2A HTTP/JSON-RPC round trip;
-- serialization and deserialization;
-- another lifecycle, health, authentication, and retry boundary.
+- an additional agent to deploy;
+- a separate reasoning loop powered by an LLM;
+- an HTTP/JSON-RPC round trip over A2A;
+- data serialization and deserialization;
+- extra boundaries for lifecycle management, health, authentication, and retries.
 
-The quotation policy is deterministic enough to be transferred to a skill.
-That skill instructs the main agent to call `campaign_quote` directly,
-effectively removing the A2A agent from the architecture.
+The quotation rules are predictable enough to move into a skill. This skill
+directs the primary agent to invoke `campaign_quote` itself, which allows the
+A2A agent to be removed from the design.
 
-This does not eliminate LLM usage. The main LLM still:
+This change does not remove the LLM. The main model continues to:
 
-- recognizes the quotation request;
-- requests the quotation skill;
-- interprets its policy;
-- extracts sector and impressions;
-- calculates the ±20% impression volumes;
-- requests the three MCP tool calls;
-- formats the final response.
+- identify that the user is asking for a quotation;
+- load the appropriate quotation skill;
+- understand and follow its rules;
+- obtain the sector and impression count;
+- derive the impression volumes at ±20%;
+- initiate the three MCP tool invocations;
+- present the final answer.
 
-It does eliminate the second LLM-backed agent and the A2A service hop.
+What disappears is the second LLM-based agent, together with the A2A service
+round trip.
 
-### 7.1 Create the quotation skill
+### 7.1 Build the quotation skill
 
-Create:
+Add the following file:
 
 ```text
 skills/campaign-quotation-policy/SKILL.md
@@ -1088,51 +1093,52 @@ description: >-
 
 # Campaign quotation policy
 
-Create a policy-compliant campaign quotation from authoritative pricing data.
+Produce a campaign quotation that follows policy and uses authoritative pricing
+data.
 
 ## Required tool
 
-Use `campaign_quote` for every scenario and every monetary value. Never
-calculate, infer, or modify CPM rates or campaign prices directly.
+Call `campaign_quote` for each scenario and for every monetary amount. Do not
+independently calculate, infer, or adjust CPM rates or campaign prices.
 
 ## Required inputs
 
-- Advertising sector
-- Requested number of impressions
+- The advertising sector
+- The desired impression count
 
-If either input is missing, ask the user for it before requesting a quote.
-Reject zero or negative impression volumes.
+Before requesting a quotation, ask the user for any missing input. Impression
+volumes equal to or below zero are invalid.
 
 ## Procedure
 
-1. Extract the sector and requested impressions from the user's request.
-2. Calculate only the impression volumes for these scenarios:
-   - lean: 20% fewer impressions than requested;
-   - requested: the original number of impressions;
-   - extended: 20% more impressions than requested.
-3. Round scenario impressions to whole numbers.
-4. Call `campaign_quote` once for each scenario.
-5. Use the CPM and total price returned by the tool without alteration.
-6. If the tool reports `used_default_rate=true`, state clearly that the sector
-   was priced with the default CPM.
-7. Do not describe the result as an approved commercial offer.
+1. Read the sector and target impression count from the user's request.
+2. Derive impression volumes only for the following cases:
+   - lean: 20% below the requested volume;
+   - requested: exactly the original volume;
+   - extended: 20% above the requested volume.
+3. Express each scenario's impressions as a whole number.
+4. Invoke `campaign_quote` separately for all three scenarios.
+5. Preserve the CPM and total price exactly as returned by the tool.
+6. When the tool returns `used_default_rate=true`, explicitly mention that the
+   default CPM was applied to the sector.
+7. Never present the result as a formally approved commercial offer.
 
 ## Output format
 
-Return:
+Structure the response as follows:
 
-1. A one-sentence summary
-2. A table with scenario, impressions, CPM, and total price
-3. Any default-rate warning
-4. A note that the figures are indicative quotations
+1. A brief, single-sentence overview
+2. A table listing scenario, impressions, CPM, and total price
+3. A warning when the default rate applies
+4. A statement clarifying that the quoted figures are indicative
 ```
 
-The skill references `campaign_quote`, but it does not register the tool. The
-tool still has to be made available through the main agent's MCP connection.
+Mentioning `campaign_quote` in the skill does not register the tool. It must
+still be exposed to the primary agent through its MCP connection.
 
-### 7.2 Give the main agent direct access to `campaign_quote`
+### 7.2 Allow the main agent to call `campaign_quote` directly
 
-Expand `allowed_tools`:
+Add the tool to `allowed_tools`:
 
 ```python
 campaign_mcp = MCPStreamableHTTPTool(
@@ -1149,8 +1155,8 @@ campaign_mcp = MCPStreamableHTTPTool(
 )
 ```
 
-Both skill folders are automatically discovered because the provider points to
-their common parent:
+The provider targets the parent directory shared by both skills, so each skill
+folder is discovered automatically:
 
 ```python
 skills_provider = SkillsProvider.from_paths(
@@ -1159,7 +1165,7 @@ skills_provider = SkillsProvider.from_paths(
 )
 ```
 
-Remove the A2A proxy and its tool:
+Next, take out the A2A proxy and the associated tool:
 
 ```python
     maf_agent = Agent(
@@ -1181,11 +1187,12 @@ Remove the A2A proxy and its tool:
         print(response.text)
 ```
 
-Run the new test. Because **Pets** is not a configured category, it
-demonstrates that the default CPM was used:
+Run the updated example. **Pets** is not among the configured categories, so
+the result shows that the fallback CPM has been applied:
 
 ---
-Here is an indicative quotation for a Pets campaign at 10,000,000 impressions.
+Below is an indicative quote for a Pets campaign targeting 10,000,000
+impressions.
 
 | Scenario | Impressions | CPM | Total price |
 |---|---:|---:|---:|
@@ -1193,13 +1200,14 @@ Here is an indicative quotation for a Pets campaign at 10,000,000 impressions.
 | Requested | 10,000,000 | €15.00 | €150,000.00 |
 | Extended | 12,000,000 | €15.00 | €180,000.00 |
 
-Default-rate warning: the Pets sector was priced with the default CPM.
+Default-rate notice: pricing for the Pets sector uses the default CPM.
 
-These figures are indicative quotations, not an approved commercial offer.
+The amounts shown are indicative estimates and do not constitute an approved
+commercial offer.
 
 ---
 
-The optimized runtime path is:
+The streamlined execution flow is now:
 
 ```text
 User
@@ -1217,7 +1225,7 @@ Main agent LLM formats the final answer
 User
 ```
 
-The A2A pricing agent is no longer required:
+As a result, the A2A pricing agent is no longer part of the solution:
 
 ```text
 Before:
@@ -1235,15 +1243,15 @@ Main agent
 
 <a id="comparison"></a>
 
-## Compare the A2A and skills-based versions
+## Comparison of the A2A and skill-based approaches
 
-Use the same input for both versions:
+Run both implementations with an identical request:
 
 ```text
 Create a quote for a Travel campaign with 9,200,000 impressions.
 ```
 
-The expected scenario volumes are:
+This should produce the following impression volumes:
 
 | Scenario | Impressions |
 |---|---:|
@@ -1251,7 +1259,8 @@ The expected scenario volumes are:
 | Requested | 9,200,000 |
 | Extended | 11,040,000 |
 
-For Travel at a CPM of EUR 16, the deterministic tool should return:
+With the Travel CPM set to EUR 16, the deterministic tool is expected to
+produce:
 
 | Scenario | Impressions | CPM | Total |
 |---|---:|---:|---:|
@@ -1259,101 +1268,103 @@ For Travel at a CPM of EUR 16, the deterministic tool should return:
 | Requested | 9,200,000 | EUR 16 | EUR 147,200 |
 | Extended | 11,040,000 | EUR 16 | EUR 176,640 |
 
-Instrument both versions and collect:
+Add instrumentation to each implementation and record:
 
-- end-to-end latency;
-- number of main-agent LLM calls;
-- number of pricing-agent LLM calls;
-- number of A2A requests;
-- number of MCP tool calls;
-- input and output tokens;
-- whether all policy requirements were satisfied.
+- total end-to-end response time;
+- LLM calls made by the primary agent;
+- LLM calls made by the pricing agent;
+- A2A request count;
+- MCP tool invocation count;
+- tokens sent and received;
+- successful fulfillment of every policy rule.
 
-An indicative comparison is:
+A representative comparison looks like this:
 
-| Dimension | A2A pricing agent | Skill + direct MCP tool |
+| Aspect | A2A pricing agent | Skill with direct MCP access |
 |---|---:|---:|
-| Main LLM | Required | Required |
-| Second LLM | Required | Not required |
-| A2A HTTP request | Required | Not required |
-| MCP calls | Three | Three |
-| Policy location | Pricing agent instructions | `SKILL.md` |
-| Separate pricing service | Required | Not required |
-| Progressive skill load | No | Yes |
+| Primary LLM | Needed | Needed |
+| Additional LLM | Needed | Unnecessary |
+| HTTP request over A2A | Needed | Unnecessary |
+| Number of MCP calls | Three | Three |
+| Where the policy resides | Pricing agent instructions | `SKILL.md` |
+| Independent pricing service | Needed | Unnecessary |
+| Skill loaded progressively | No | Yes |
 
-Exact LLM call counts depend on the model and runtime behavior. A typical
-skills flow adds an LLM turn for `load_skill`, but it avoids the complete
-reasoning loop of the remote pricing agent.
+The precise number of LLM calls varies with the selected model and its runtime
+behavior. A standard skill-based flow usually introduces an LLM turn for
+`load_skill`, while removing the remote pricing agent's full reasoning cycle.
 
-The expected latency improvement comes from eliminating:
+The anticipated reduction in latency is achieved by removing:
 
-1. the remote agent's LLM inference calls;
-2. the A2A HTTP/JSON-RPC round trip;
-3. A2A serialization and deserialization;
-4. the additional service lifecycle.
+1. LLM inference within the remote agent;
+2. the HTTP/JSON-RPC round trip required by A2A;
+3. serialization and deserialization for the A2A exchange;
+4. management of an extra service lifecycle.
 
-The LLM inference saved in the second agent is normally more significant than
-local HTTP and JSON serialization alone.
+In most cases, avoiding inference in the second agent has a greater impact than
+eliminating local HTTP communication and JSON processing by themselves.
 
 ---
 
 <a id="conclusions"></a>
 
-## What this tutorial demonstrates
+## Key lessons from this tutorial
 
-### A tool is enough for an atomic operation
+### Atomic operations can be handled by a tool
 
 `campaign_quote(sector, impressions)` is self-describing and deterministic.
-The model can often invoke it correctly without a skill.
+In many cases, the model can call it correctly without needing a skill.
 
-### A skill is valuable when it adds policy
+### Skills provide value when they introduce policy
 
-The quotation skill is useful because it adds behavior that is not present in
-the tool schema:
+The quotation skill matters because it defines behavior beyond the information
+available in the tool schema:
 
-- three scenarios;
-- the ±20% rule;
-- required-input handling;
-- default-rate warnings;
-- output requirements;
-- restrictions on modifying authoritative prices.
+- generation of three scenarios;
+- application of the ±20% variation;
+- validation of mandatory inputs;
+- notification when the default rate is used;
+- a prescribed response format;
+- protection against changing authoritative prices.
 
-If the skill merely said "extract two parameters and call `campaign_quote`",
-it would add little value and might only introduce another LLM turn.
+If its only instruction were to read two arguments and invoke
+`campaign_quote`, the skill would contribute very little and could simply add
+an extra LLM turn.
 
-### MCP and skills solve different problems
+### MCP and skills address distinct concerns
 
-MCP exposes the operations. The skills define how to orchestrate them.
+MCP makes operations available; skills establish the procedure for coordinating
+them.
 
 ```text
 MCP tool:
-What can the system do?
+Which capabilities does the system provide?
 
 Skill:
-When and according to which procedure should it do it?
+When should those capabilities be used, and what process should be followed?
 ```
 
-### A2A remains appropriate for real autonomy
+### Genuine autonomy remains a valid use case for A2A
 
-Do not replace an A2A agent with a skill when the remote agent has a meaningful
-independent responsibility, such as:
+An A2A agent should not be replaced by a skill when the remote component has a
+substantive independent role, for example:
 
-- stateful negotiation;
-- separate ownership or security boundaries;
-- independent approvals;
-- long-running tasks;
-- asynchronous progress;
-- access to private systems unavailable to the main agent;
-- autonomous coordination with additional agents.
+- negotiations that maintain state;
+- distinct ownership or security boundaries;
+- approvals performed independently;
+- operations that take a long time to complete;
+- progress reported asynchronously;
+- access to private resources the primary agent cannot reach;
+- independent collaboration with other agents.
 
-In those cases, the additional network and LLM costs are the price of a real
-architectural boundary.
+Under those conditions, the additional LLM and networking overhead is the cost
+of maintaining a genuine architectural boundary.
 
-### The final decision rule
+### A practical selection rule
 
-Use:
+Choose:
 
-- a **tool** for an atomic capability;
-- **MCP** when that capability must be shared remotely;
-- a **skill** for reusable workflow and policy;
-- **A2A** for delegation to a genuinely autonomous agent.
+- a **tool** when the capability is atomic;
+- **MCP** when the capability needs to be available remotely;
+- a **skill** to capture reusable procedures and policy;
+- **A2A** when work must be delegated to a truly autonomous agent.

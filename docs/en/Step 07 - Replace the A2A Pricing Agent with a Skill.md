@@ -2,33 +2,34 @@
 
 # Step 7 — Replace the A2A pricing agent with a skill
 
-The A2A implementation works, but it adds:
+Although the A2A solution works, it introduces:
 
-- a second deployed agent;
-- another LLM-backed reasoning loop;
-- an A2A HTTP/JSON-RPC round trip;
-- serialization and deserialization;
-- another lifecycle, health, authentication, and retry boundary.
+- an additional agent to deploy;
+- a separate reasoning loop powered by an LLM;
+- an HTTP/JSON-RPC round trip over A2A;
+- data serialization and deserialization;
+- extra boundaries for lifecycle management, health, authentication, and retries.
 
-The quotation policy is deterministic enough to be transferred to a skill.
-That skill instructs the main agent to call `campaign_quote` directly,
-effectively removing the A2A agent from the architecture.
+The quotation rules are predictable enough to move into a skill. This skill
+directs the primary agent to invoke `campaign_quote` itself, which allows the
+A2A agent to be removed from the design.
 
-This does not eliminate LLM usage. The main LLM still:
+This change does not remove the LLM. The main model continues to:
 
-- recognizes the quotation request;
-- requests the quotation skill;
-- interprets its policy;
-- extracts sector and impressions;
-- calculates the ±20% impression volumes;
-- requests the three MCP tool calls;
-- formats the final response.
+- identify that the user is asking for a quotation;
+- load the appropriate quotation skill;
+- understand and follow its rules;
+- obtain the sector and impression count;
+- derive the impression volumes at ±20%;
+- initiate the three MCP tool invocations;
+- present the final answer.
 
-It does eliminate the second LLM-backed agent and the A2A service hop.
+What disappears is the second LLM-based agent, together with the A2A service
+round trip.
 
-## 7.1 Create the quotation skill
+## 7.1 Build the quotation skill
 
-Create:
+Add the following file:
 
 ```text
 skills/campaign-quotation-policy/SKILL.md
@@ -44,51 +45,52 @@ description: >-
 
 # Campaign quotation policy
 
-Create a policy-compliant campaign quotation from authoritative pricing data.
+Produce a campaign quotation that follows policy and uses authoritative pricing
+data.
 
 ## Required tool
 
-Use `campaign_quote` for every scenario and every monetary value. Never
-calculate, infer, or modify CPM rates or campaign prices directly.
+Call `campaign_quote` for each scenario and for every monetary amount. Do not
+independently calculate, infer, or adjust CPM rates or campaign prices.
 
 ## Required inputs
 
-- Advertising sector
-- Requested number of impressions
+- The advertising sector
+- The desired impression count
 
-If either input is missing, ask the user for it before requesting a quote.
-Reject zero or negative impression volumes.
+Before requesting a quotation, ask the user for any missing input. Impression
+volumes equal to or below zero are invalid.
 
 ## Procedure
 
-1. Extract the sector and requested impressions from the user's request.
-2. Calculate only the impression volumes for these scenarios:
-   - lean: 20% fewer impressions than requested;
-   - requested: the original number of impressions;
-   - extended: 20% more impressions than requested.
-3. Round scenario impressions to whole numbers.
-4. Call `campaign_quote` once for each scenario.
-5. Use the CPM and total price returned by the tool without alteration.
-6. If the tool reports `used_default_rate=true`, state clearly that the sector
-   was priced with the default CPM.
-7. Do not describe the result as an approved commercial offer.
+1. Read the sector and target impression count from the user's request.
+2. Derive impression volumes only for the following cases:
+   - lean: 20% below the requested volume;
+   - requested: exactly the original volume;
+   - extended: 20% above the requested volume.
+3. Express each scenario's impressions as a whole number.
+4. Invoke `campaign_quote` separately for all three scenarios.
+5. Preserve the CPM and total price exactly as returned by the tool.
+6. When the tool returns `used_default_rate=true`, explicitly mention that the
+   default CPM was applied to the sector.
+7. Never present the result as a formally approved commercial offer.
 
 ## Output format
 
-Return:
+Structure the response as follows:
 
-1. A one-sentence summary
-2. A table with scenario, impressions, CPM, and total price
-3. Any default-rate warning
-4. A note that the figures are indicative quotations
+1. A brief, single-sentence overview
+2. A table listing scenario, impressions, CPM, and total price
+3. A warning when the default rate applies
+4. A statement clarifying that the quoted figures are indicative
 ```
 
-The skill references `campaign_quote`, but it does not register the tool. The
-tool still has to be made available through the main agent's MCP connection.
+Mentioning `campaign_quote` in the skill does not register the tool. It must
+still be exposed to the primary agent through its MCP connection.
 
-## 7.2 Give the main agent direct access to `campaign_quote`
+## 7.2 Allow the main agent to call `campaign_quote` directly
 
-Expand `allowed_tools`:
+Add the tool to `allowed_tools`:
 
 ```python
 campaign_mcp = MCPStreamableHTTPTool(
@@ -105,8 +107,8 @@ campaign_mcp = MCPStreamableHTTPTool(
 )
 ```
 
-Both skill folders are automatically discovered because the provider points to
-their common parent:
+The provider targets the parent directory shared by both skills, so each skill
+folder is discovered automatically:
 
 ```python
 skills_provider = SkillsProvider.from_paths(
@@ -115,7 +117,7 @@ skills_provider = SkillsProvider.from_paths(
 )
 ```
 
-Remove the A2A proxy and its tool:
+Next, take out the A2A proxy and the associated tool:
 
 ```python
     maf_agent = Agent(
@@ -137,11 +139,12 @@ Remove the A2A proxy and its tool:
         print(response.text)
 ```
 
-Run the new test. Because **Pets** is not a configured category, it
-demonstrates that the default CPM was used:
+Run the updated example. **Pets** is not among the configured categories, so
+the result shows that the fallback CPM has been applied:
 
 ---
-Here is an indicative quotation for a Pets campaign at 10,000,000 impressions.
+Below is an indicative quote for a Pets campaign targeting 10,000,000
+impressions.
 
 | Scenario | Impressions | CPM | Total price |
 |---|---:|---:|---:|
@@ -149,13 +152,14 @@ Here is an indicative quotation for a Pets campaign at 10,000,000 impressions.
 | Requested | 10,000,000 | €15.00 | €150,000.00 |
 | Extended | 12,000,000 | €15.00 | €180,000.00 |
 
-Default-rate warning: the Pets sector was priced with the default CPM.
+Default-rate notice: pricing for the Pets sector uses the default CPM.
 
-These figures are indicative quotations, not an approved commercial offer.
+The amounts shown are indicative estimates and do not constitute an approved
+commercial offer.
 
 ---
 
-The optimized runtime path is:
+The streamlined execution flow is now:
 
 ```text
 User
@@ -173,7 +177,7 @@ Main agent LLM formats the final answer
 User
 ```
 
-The A2A pricing agent is no longer required:
+As a result, the A2A pricing agent is no longer part of the solution:
 
 ```text
 Before:
@@ -188,4 +192,3 @@ Main agent
 ```
 
 ---
-

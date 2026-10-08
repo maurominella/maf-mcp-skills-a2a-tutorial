@@ -1,15 +1,15 @@
 <a id="step-4"></a>
 
-# Step 4 — Observe inconsistent orchestration
+# Step 4 — Examine orchestration inconsistencies
 
-Atomic questions are usually handled well because the tool schemas make the
-required operation obvious:
+The agent generally handles focused questions effectively because the tool
+schemas clearly indicate which operation is needed:
 
 ```text
 What is the ROI of CMP-004?
 ```
 
-The expected path is simple:
+The resulting sequence is straightforward:
 
 ```text
 campaign_metrics("CMP-004")
@@ -17,29 +17,30 @@ campaign_metrics("CMP-004")
 → answer
 ```
 
-Now use a broader question:
+Next, ask a more comprehensive question:
 
 ```text
 Review the entire campaign portfolio and recommend which campaign should
 receive additional budget next quarter.
 ```
 
-The agent has enough capabilities to answer, but it has not been given a
-standard review procedure. Across repeated runs or different models, it may:
+The agent has all the required capabilities, but no consistent review process
+has been defined for it. When the prompt is repeated or another model is used,
+the agent might:
 
-- rank campaigns only by ROI;
-- consider revenue but ignore conversions;
-- inspect only a subset of campaigns;
-- calculate some ROI values itself instead of using `compute_roi`;
-- omit data-quality limitations;
-- produce a table in one run and prose in another;
-- recommend a campaign without explaining the trade-off between profitability
+- base the ranking exclusively on ROI;
+- evaluate revenue while overlooking conversions;
+- review only some of the available campaigns;
+- compute certain ROI figures directly rather than calling `compute_roi`;
+- leave out caveats about data quality;
+- return a table in one execution and plain text in another;
+- make a recommendation without discussing the balance between profitability
   and scale.
 
-This is not an MCP problem. MCP correctly exposes the capabilities. The missing
-element is a reusable domain procedure.
+MCP is not the source of this behavior: it exposes the capabilities correctly.
+What is absent is a repeatable procedure for this business domain.
 
-Run the same prompt several times and inspect `response.messages`:
+Execute the same prompt multiple times, then examine `response.messages`:
 
 ```python
 prompt = (
@@ -57,16 +58,16 @@ async with agent:
             print(message)
 ```
 
-Do not claim that the behavior must be inconsistent on every run. Instead,
-measure whether the response consistently satisfies explicit criteria:
+The behavior should not be described as necessarily inconsistent in every
+execution. A better approach is to check whether each response reliably meets
+a set of well-defined criteria:
 
-| Criterion | Expected without a skill? |
+| Evaluation criterion | Reliable without a skill? |
 |---|---|
-| Every campaign is inspected | Not guaranteed |
-| Every ROI uses `compute_roi` | Not guaranteed |
-| Profitability and scale are both considered | Not guaranteed |
-| Data limitations are stated | Not guaranteed |
-| The same output structure is used | Not guaranteed |
+| All campaigns are reviewed | No guarantee |
+| Every ROI is obtained through `compute_roi` | No guarantee |
+| Both scale and profitability are evaluated | No guarantee |
+| Data constraints are acknowledged | No guarantee |
+| A consistent response structure is followed | No guarantee |
 
 ---
-

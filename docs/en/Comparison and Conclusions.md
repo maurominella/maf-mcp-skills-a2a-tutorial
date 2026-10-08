@@ -1,14 +1,14 @@
 <a id="comparison"></a>
 
-# Compare the A2A and skills-based versions
+# Comparison of the A2A and skill-based approaches
 
-Use the same input for both versions:
+Run both implementations with an identical request:
 
 ```text
 Create a quote for a Travel campaign with 9,200,000 impressions.
 ```
 
-The expected scenario volumes are:
+This should produce the following impression volumes:
 
 | Scenario | Impressions |
 |---|---:|
@@ -16,7 +16,8 @@ The expected scenario volumes are:
 | Requested | 9,200,000 |
 | Extended | 11,040,000 |
 
-For Travel at a CPM of EUR 16, the deterministic tool should return:
+With the Travel CPM set to EUR 16, the deterministic tool is expected to
+produce:
 
 | Scenario | Impressions | CPM | Total |
 |---|---:|---:|---:|
@@ -24,101 +25,103 @@ For Travel at a CPM of EUR 16, the deterministic tool should return:
 | Requested | 9,200,000 | EUR 16 | EUR 147,200 |
 | Extended | 11,040,000 | EUR 16 | EUR 176,640 |
 
-Instrument both versions and collect:
+Add instrumentation to each implementation and record:
 
-- end-to-end latency;
-- number of main-agent LLM calls;
-- number of pricing-agent LLM calls;
-- number of A2A requests;
-- number of MCP tool calls;
-- input and output tokens;
-- whether all policy requirements were satisfied.
+- total end-to-end response time;
+- LLM calls made by the primary agent;
+- LLM calls made by the pricing agent;
+- A2A request count;
+- MCP tool invocation count;
+- tokens sent and received;
+- successful fulfillment of every policy rule.
 
-An indicative comparison is:
+A representative comparison looks like this:
 
-| Dimension | A2A pricing agent | Skill + direct MCP tool |
+| Aspect | A2A pricing agent | Skill with direct MCP access |
 |---|---:|---:|
-| Main LLM | Required | Required |
-| Second LLM | Required | Not required |
-| A2A HTTP request | Required | Not required |
-| MCP calls | Three | Three |
-| Policy location | Pricing agent instructions | `SKILL.md` |
-| Separate pricing service | Required | Not required |
-| Progressive skill load | No | Yes |
+| Primary LLM | Needed | Needed |
+| Additional LLM | Needed | Unnecessary |
+| HTTP request over A2A | Needed | Unnecessary |
+| Number of MCP calls | Three | Three |
+| Where the policy resides | Pricing agent instructions | `SKILL.md` |
+| Independent pricing service | Needed | Unnecessary |
+| Skill loaded progressively | No | Yes |
 
-Exact LLM call counts depend on the model and runtime behavior. A typical
-skills flow adds an LLM turn for `load_skill`, but it avoids the complete
-reasoning loop of the remote pricing agent.
+The precise number of LLM calls varies with the selected model and its runtime
+behavior. A standard skill-based flow usually introduces an LLM turn for
+`load_skill`, while removing the remote pricing agent's full reasoning cycle.
 
-The expected latency improvement comes from eliminating:
+The anticipated reduction in latency is achieved by removing:
 
-1. the remote agent's LLM inference calls;
-2. the A2A HTTP/JSON-RPC round trip;
-3. A2A serialization and deserialization;
-4. the additional service lifecycle.
+1. LLM inference within the remote agent;
+2. the HTTP/JSON-RPC round trip required by A2A;
+3. serialization and deserialization for the A2A exchange;
+4. management of an extra service lifecycle.
 
-The LLM inference saved in the second agent is normally more significant than
-local HTTP and JSON serialization alone.
+In most cases, avoiding inference in the second agent has a greater impact than
+eliminating local HTTP communication and JSON processing by themselves.
 
 ---
 
 <a id="conclusions"></a>
 
-# What this tutorial demonstrates
+# Key lessons from this tutorial
 
-## A tool is enough for an atomic operation
+## Atomic operations can be handled by a tool
 
 `campaign_quote(sector, impressions)` is self-describing and deterministic.
-The model can often invoke it correctly without a skill.
+In many cases, the model can call it correctly without needing a skill.
 
-## A skill is valuable when it adds policy
+## Skills provide value when they introduce policy
 
-The quotation skill is useful because it adds behavior that is not present in
-the tool schema:
+The quotation skill matters because it defines behavior beyond the information
+available in the tool schema:
 
-- three scenarios;
-- the ±20% rule;
-- required-input handling;
-- default-rate warnings;
-- output requirements;
-- restrictions on modifying authoritative prices.
+- generation of three scenarios;
+- application of the ±20% variation;
+- validation of mandatory inputs;
+- notification when the default rate is used;
+- a prescribed response format;
+- protection against changing authoritative prices.
 
-If the skill merely said "extract two parameters and call `campaign_quote`",
-it would add little value and might only introduce another LLM turn.
+If its only instruction were to read two arguments and invoke
+`campaign_quote`, the skill would contribute very little and could simply add
+an extra LLM turn.
 
-## MCP and skills solve different problems
+## MCP and skills address distinct concerns
 
-MCP exposes the operations. The skills define how to orchestrate them.
+MCP makes operations available; skills establish the procedure for coordinating
+them.
 
 ```text
 MCP tool:
-What can the system do?
+Which capabilities does the system provide?
 
 Skill:
-When and according to which procedure should it do it?
+When should those capabilities be used, and what process should be followed?
 ```
 
-## A2A remains appropriate for real autonomy
+## Genuine autonomy remains a valid use case for A2A
 
-Do not replace an A2A agent with a skill when the remote agent has a meaningful
-independent responsibility, such as:
+An A2A agent should not be replaced by a skill when the remote component has a
+substantive independent role, for example:
 
-- stateful negotiation;
-- separate ownership or security boundaries;
-- independent approvals;
-- long-running tasks;
-- asynchronous progress;
-- access to private systems unavailable to the main agent;
-- autonomous coordination with additional agents.
+- negotiations that maintain state;
+- distinct ownership or security boundaries;
+- approvals performed independently;
+- operations that take a long time to complete;
+- progress reported asynchronously;
+- access to private resources the primary agent cannot reach;
+- independent collaboration with other agents.
 
-In those cases, the additional network and LLM costs are the price of a real
-architectural boundary.
+Under those conditions, the additional LLM and networking overhead is the cost
+of maintaining a genuine architectural boundary.
 
-## The final decision rule
+## A practical selection rule
 
-Use:
+Choose:
 
-- a **tool** for an atomic capability;
-- **MCP** when that capability must be shared remotely;
-- a **skill** for reusable workflow and policy;
-- **A2A** for delegation to a genuinely autonomous agent.
+- a **tool** when the capability is atomic;
+- **MCP** when the capability needs to be available remotely;
+- a **skill** to capture reusable procedures and policy;
+- **A2A** when work must be delegated to a truly autonomous agent.

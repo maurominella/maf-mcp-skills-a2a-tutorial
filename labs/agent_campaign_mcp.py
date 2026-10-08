@@ -7,7 +7,9 @@ from pydantic import Field
 from asb_campaign import get_campaign, list_campaigns
 
 logger = logging.getLogger(__name__)
+
 mcp = FastMCP("AdvertSphere Campaign MCP")
+
 CPM_BY_SECTOR = {
     "automotive": 18.0,
     "finance": 22.0,

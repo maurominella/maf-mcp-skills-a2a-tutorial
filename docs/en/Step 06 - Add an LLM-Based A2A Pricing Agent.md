@@ -2,19 +2,19 @@
 
 # Step 6 — Add an LLM-backed A2A pricing agent
 
-The application now needs to quote a new advertising campaign from a brief such
-as:
+The next requirement is to generate a quotation for a new advertising campaign
+from a brief like this:
 
 ```text
 Create a quote for a Travel campaign with 9,200,000 impressions.
 ```
 
-The atomic pricing calculation belongs in the MCP server. The initial business
-policy, however, will be implemented by a dedicated A2A agent.
+The MCP server will remain responsible for the individual pricing calculation,
+while a dedicated A2A agent will initially handle the broader business rules.
 
-## 6.1 Add `campaign_quote` to the MCP server
+## 6.1 Introduce `campaign_quote` in the MCP server
 
-Add the following tool to `agent_campaign_mcp.py`:
+Define this additional tool in `agent_campaign_mcp.py`:
 
 ```python
 CPM_BY_SECTOR = {
@@ -56,40 +56,40 @@ def campaign_quote(
     }
 ```
 
-Keep this tool atomic. It calculates exactly one scenario and does not contain
-the higher-level quotation policy.
+The tool should remain atomic: it prices one scenario only and contains none
+of the higher-level quotation logic.
 
-## 6.2 Define the quotation policy
+## 6.2 Specify the quotation rules
 
-The pricing service must apply the following policy:
+The pricing service is expected to follow these rules:
 
-1. Extract sector and impressions from the request.
-2. Reject missing or non-positive impressions.
-3. Produce three scenarios:
-   - lean: 20% fewer impressions;
-   - requested: the requested impressions;
-   - extended: 20% more impressions.
-4. Use `campaign_quote` for every monetary value.
-5. Never calculate or modify the CPM directly.
-6. Warn when the default sector rate is used.
-7. Present the three scenarios in a comparison table.
+1. Read the sector and impression count from the request.
+2. Do not accept an absent impression count or a value that is not positive.
+3. Generate three alternatives:
+   - lean: 20% below the requested impressions;
+   - requested: the original impression count;
+   - extended: 20% above the requested impressions.
+4. Obtain every monetary amount through `campaign_quote`.
+5. Do not independently compute or alter the CPM.
+6. Indicate whenever the fallback sector rate is applied.
+7. Show all three alternatives in a comparison table.
 
-The policy is intentionally more complex than the MCP tool schema. This makes
-the A2A agent responsible for a real procedure, rather than merely forwarding
-the two arguments (*sector* and *impressions*).
+These rules deliberately go beyond what the MCP tool schema describes. The A2A
+agent therefore performs an actual procedure instead of simply passing along
+the two parameters, *sector* and *impressions*.
 
-The agent is responsible for extracting those arguments from the request, so
-it needs an LLM. An LLM is not theoretically required for every A2A or hosted
-agent: if the request arrived in an already encoded form, or in a form that
-could be interpreted reliably with regular expressions, it could be omitted.
-In practice, however, **agents nearly always include an LLM**. Including it
-here makes the next step a representative demonstration of moving an A2A
-agent's behavior into a skill.
+Because the agent must identify those values within a natural-language
+request, it relies on an LLM. In principle, not every A2A or hosted agent
+requires one: it could be left out if requests were already structured, or if
+regular expressions could parse them dependably. In real-world applications,
+however, **an LLM is present in nearly every agent**. Using one here makes the
+next step a realistic example of transferring an A2A agent's behavior into a
+skill.
 
-## 6.3 Create the A2A pricing agent
+## 6.3 Implement the A2A pricing agent
 
-Create `pricing_a2a_agent.py`. Its instructions contain the advanced quotation
-policy defined above:
+Create `pricing_a2a_agent.py` and place the quotation rules described above in
+the agent instructions:
 
 ```python
 import os
@@ -195,26 +195,26 @@ if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=9000)
 ```
 
-This agent is genuinely LLM-backed:
+This is a true LLM-powered agent because:
 
-1. its LLM interprets the natural-language request;
-2. it extracts sector and impressions;
-3. it applies the three-scenario policy;
-4. it requests three calls to the restricted MCP tool;
-5. it formats the response.
+1. the model understands the request written in natural language;
+2. it identifies the sector and number of impressions;
+3. it follows the policy for the three scenarios;
+4. it initiates three invocations of the restricted MCP tool;
+5. it prepares the resulting answer.
 
-Start it after starting the MCP server:
+Once the MCP server is running, launch the agent:
 
 ```bash
 .venv/bin/python labs/pricing_a2a_agent.py
 ```
 
-Uvicorn exposes the agent through HTTP, while its
+Uvicorn makes the agent available over HTTP. Through its
 [ASGI (Asynchronous Server Gateway Interface)](https://uvicorn.dev/concepts/asgi/)
-integration invokes `pricing_agent` with the user's input and any
-authentication information, which this tutorial does not use. MAF exposes the
-agent through two routes: `/` for invocation and
-`/.well-known/agent-card.json` for the Agent Card:
+integration, `pricing_agent` receives the user's input and any authentication
+details, although authentication is not used in this tutorial. MAF publishes
+two endpoints for the agent: `/` handles invocations, while
+`/.well-known/agent-card.json` serves the Agent Card:
 
 ```json
 {
@@ -257,10 +257,11 @@ agent through two routes: `/` for invocation and
 }
 ```
 
-## 6.4 Expose the A2A agent as a tool
+## 6.4 Make the A2A agent available as a tool
 
-The main agent must not see `campaign_quote` directly during this stage.
-Restrict its MCP connection to the original three performance tools:
+At this point, `campaign_quote` must not be directly accessible to the main
+agent. Keep its MCP connection limited to the original three performance
+tools:
 
 ```python
 campaign_mcp = MCPStreamableHTTPTool(
@@ -276,7 +277,7 @@ campaign_mcp = MCPStreamableHTTPTool(
 )
 ```
 
-Create an A2A proxy and convert it to a MAF tool:
+Set up an A2A proxy, then expose that proxy as a MAF tool:
 
 ```python
 from agent_framework.a2a import A2AAgent
@@ -301,7 +302,7 @@ pricing_tool = remote_pricing_agent.as_tool(
 )
 ```
 
-Now register the A2A tool alongside the existing MCP connection:
+Register the new A2A tool together with the MCP connection already in use:
 
 ```python
     maf_agent = Agent(
@@ -323,10 +324,10 @@ Now register the A2A tool alongside the existing MCP connection:
         print(response.text)
 ```
 
-The result is consistent with the A2A agent's instructions:
+The generated response follows the instructions assigned to the A2A agent:
 
 ---
-Here is the quote for the Travel campaign:
+The quotation for the Travel campaign is shown below:
 
 | Scenario | Impressions | CPM (EUR) | Total (EUR) |
 |---|---:|---:|---:|
@@ -334,11 +335,11 @@ Here is the quote for the Travel campaign:
 | Requested | 9,200,000 | 16.00 | 147,200.00 |
 | Extended | 11,040,000 | 16.00 | 176,640.00 |
 
-Requested quote: **EUR 147,200.00**.
+The requested scenario totals **EUR 147,200.00**.
 
 ---
 
-The runtime path is:
+The request now travels through this execution path:
 
 ```text
 User
@@ -358,22 +359,23 @@ Main agent LLM integrates the result
 User
 ```
 
-In other words, answering this request involves four LLM calls plus one HTTP
-call to the A2A service and one MCP tool interaction:
+Overall, producing the answer requires four LLM calls, one HTTP request to the
+A2A service, and one interaction with the MCP tool:
 
-- one main-agent LLM call that selects the A2A tool;
-- one HTTP call to A2A, including parameter serialization and deserialization;
-- one LLM call inside the A2A agent that selects the MCP pricing tool;
-- one MCP pricing tool interaction, comprising the required scenario calls;
-- one LLM call inside the A2A agent that formats the pricing tool response;
-- one final main-agent LLM call that turns the A2A response into the user-facing answer.
+- the main agent first calls its LLM to choose the A2A tool;
+- an HTTP request reaches A2A, with parameters serialized and then deserialized;
+- the A2A agent calls its own LLM to select the MCP pricing tool;
+- the MCP pricing interaction performs the necessary calls for each scenario;
+- the A2A agent uses another LLM call to format the pricing result;
+- finally, the main agent calls its LLM again to convert the A2A result into
+  the response shown to the user.
 
-This architecture is justified when the pricing agent represents a real
-autonomous boundary: a separately owned service, an independent approval
-process, a stateful negotiation, or a long-running task.
+This design makes sense when the pricing agent forms a genuinely independent
+boundary, such as a service managed by another owner, a separate approval
+workflow, a stateful negotiation process, or a task that runs for a long time.
 
-If those requirements do not apply, the invocation chain can be shortened by
-moving the A2A agent's behavior into a skill loaded by the main agent. Step 7
-explores that optimization.
+When none of those conditions applies, the call chain can be simplified by
+turning the A2A agent's behavior into a skill that the main agent loads. That
+optimization is the subject of Step 7.
 
 ---
