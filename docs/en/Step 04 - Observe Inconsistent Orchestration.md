@@ -49,7 +49,7 @@ prompt = (
 )
 
 async with agent:
-    for run_number in range(1, 4):
+    for run_number in range(1, 5):
         response = await agent.run(prompt)
         print(f"\n--- Run {run_number} ---")
         print(response.text)
