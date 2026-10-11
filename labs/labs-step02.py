@@ -11,7 +11,7 @@ load_dotenv()
 
 from typing import Annotated
 from pydantic import Field
-from asb_campaign import get_campaign, list_campaigns
+from asb_campaign import get_campaign, list_campaigns, roi
 
 
 def all_campaigns() -> list:
@@ -31,21 +31,16 @@ def campaign_metrics(
     return campaign
 
 def compute_roi(
-    revenue_eur: Annotated[
-        float,
-        Field(description="Campaign revenue in EUR"),
-    ],
-    budget_eur: Annotated[
-        float,
-        Field(description="Campaign budget in EUR"),
-    ],
+    campaign_id: Annotated[
+            str,
+            Field(description="Campaign identifier, for example CMP-004"),
+        ],
 ) -> dict:
     """Calculate ROI as a percentage from revenue and budget."""
-    if budget_eur <= 0:
-        return {"error": "budget_eur must be greater than zero"}
-
-    roi_pct = (revenue_eur - budget_eur) / budget_eur * 100
+    
+    roi_pct = roi(campaign_id)
     return {"roi_pct": round(roi_pct, 1)}
+
 
 async def main() -> None:
     openai_client = OpenAIChatClient(
