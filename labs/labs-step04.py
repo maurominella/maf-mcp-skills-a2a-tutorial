@@ -80,7 +80,7 @@ async def main() -> None:
     )
 
     async with maf_agent:
-        for run_number in range(1, 4):
+        for run_number in range(1, 5):
             response = await maf_agent.run(
                 "Review the entire campaign portfolio and recommend which campaign "
                 "should receive additional budget next quarter."
