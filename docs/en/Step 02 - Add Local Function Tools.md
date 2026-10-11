@@ -24,6 +24,7 @@ from asb_campaign import get_campaign, list_campaigns
 def all_campaigns() -> list:
     """List the id, client, and sector of every campaign."""
     return list_campaigns()
+    
 def campaign_metrics(
     campaign_id: Annotated[
         str,
