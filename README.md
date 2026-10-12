@@ -87,3 +87,21 @@ used by the seven implementations:
 The later steps require the MCP server and, for Step 6, the A2A pricing agent
 to be running. The relevant documentation pages include the exact commands and
 execution order.
+
+## Official references and further reading
+
+- [Introducing Skills — Anthropic](https://claude.com/blog/skills): the
+  original announcement describing skills as folders of instructions, scripts,
+  and resources that Claude loads when relevant.
+- [Announcing the Agent2Agent Protocol (A2A) — Google](https://developers.googleblog.com/en/a2a-a-new-era-of-agent-interoperability/):
+  the original announcement of the open protocol for communication and
+  collaboration between independent agents.
+- [Agent Skills — Microsoft Learn](https://learn.microsoft.com/en-us/agent-framework/agents/skills):
+  the Microsoft Agent Framework documentation for creating, loading, and
+  using portable skills.
+- [Azure Agent Skills — Microsoft Learn](https://learn.microsoft.com/en-us/training/support/agent-skills):
+  an overview of Microsoft's catalog of AI-readable skills grounded in
+  authoritative Azure documentation.
+- [From Specialist Agents to Distributed Skills over MCP — Tommaso Stocchi](https://devblogs.microsoft.com/agent-framework/from-specialist-agents-to-distributed-skills-over-mcp/):
+  a practical architectural comparison between delegating work to specialist
+  agents and distributing their instructions as skills backed by MCP tools.

@@ -42,6 +42,7 @@ Framework agent.
 
 ## Table of contents
 
+- [Official references and further reading](#official-references-and-further-reading)
 - [Prerequisites](#prerequisites)
 - [Step 1 — Create a minimal MAF agent](<./Step 01 - Create a Minimal MAF Agent.md>)
 - [Step 2 — Add local function tools](<./Step 02 - Add Local Function Tools.md>)
@@ -52,6 +53,7 @@ Framework agent.
 - [Step 7 — Replace the A2A pricing agent with a skill](<./Step 07 - Replace the A2A Pricing Agent with a Skill.md>)
 - [Compare the A2A and skills-based versions](<./Comparison and Conclusions.md#comparison>)
 - [Conclusions](<./Comparison and Conclusions.md#conclusions>)
+
 
 <a id="prerequisites"></a>
 
