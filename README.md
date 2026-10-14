@@ -49,13 +49,13 @@ the A2A and skills-based architectures and the final design guidelines.
 
 | Step | What it demonstrates | Documentation | Python lab |
 |---:|---|---|---|
-| 1 | Create a minimal Microsoft Agent Framework agent backed by Azure OpenAI. | [English](<./docs/en/Step 01 - Create a Minimal MAF Agent.md>) · [Italiano](<./docs/it/Step 01 - Create a Minimal MAF Agent.md>) | [`labs-step01.py`](./labs/labs-step01.py) |
-| 2 | Add deterministic local function tools for campaign discovery, metrics, and ROI. | [English](<./docs/en/Step 02 - Add Local Function Tools.md>) · [Italiano](<./docs/it/Step 02 - Add Local Function Tools.md>) | [`labs-step02.py`](./labs/labs-step02.py) |
-| 3 | Move the campaign tools behind an MCP server and consume them through `MCPStreamableHTTPTool`. | [English](<./docs/en/Step 03 - Move Tools to an MCP Server.md>) · [Italiano](<./docs/it/Step 03 - Move Tools to an MCP Server.md>) | [`labs-step03.py`](./labs/labs-step03.py) |
-| 4 | Observe why access to tools alone does not guarantee consistent orchestration. | [English](<./docs/en/Step 04 - Observe Inconsistent Orchestration.md>) · [Italiano](<./docs/it/Step 04 - Observe Inconsistent Orchestration.md>) | [`labs-step04.py`](./labs/labs-step04.py) |
-| 5 | Add the `campaign-performance-review` skill to provide a reusable portfolio-review procedure. | [English](<./docs/en/Step 05 - Add the Campaign Performance Review Skill.md>) · [Italiano](<./docs/it/Step 05 - Add the Campaign Performance Review Skill.md>) | [`labs-step05.py`](./labs/labs-step05.py) |
-| 6 | Add an LLM-backed A2A pricing agent that applies quotation policy and uses an MCP pricing tool. | [English](<./docs/en/Step 06 - Add an LLM-Based A2A Pricing Agent.md>) · [Italiano](<./docs/it/Step 06 - Add an LLM-Based A2A Pricing Agent.md>) | [`labs-step06.py`](./labs/labs-step06.py) |
-| 7 | Replace the pricing A2A agent with a skill and let the main agent call the MCP pricing tool directly. | [English](<./docs/en/Step 07 - Replace the A2A Pricing Agent with a Skill.md>) · [Italiano](<./docs/it/Step 07 - Replace the A2A Pricing Agent with a Skill.md>) | [`labs-step07.py`](./labs/labs-step07.py) |
+| 1 | Create a minimal Microsoft Agent Framework agent backed by Azure OpenAI. | [English](<./docs/en/Step 01 - Create a Minimal MAF Agent.md>) · [Italiano](<./docs/it/Step 01 - Create a Minimal MAF Agent.md>) | [`labs-step01.py`](./labs/python/labs-step01.py) |
+| 2 | Add deterministic local function tools for campaign discovery, metrics, and ROI. | [English](<./docs/en/Step 02 - Add Local Function Tools.md>) · [Italiano](<./docs/it/Step 02 - Add Local Function Tools.md>) | [`labs-step02.py`](./labs/python/labs-step02.py) |
+| 3 | Move the campaign tools behind an MCP server and consume them through `MCPStreamableHTTPTool`. | [English](<./docs/en/Step 03 - Move Tools to an MCP Server.md>) · [Italiano](<./docs/it/Step 03 - Move Tools to an MCP Server.md>) | [`labs-step03.py`](./labs/python/labs-step03.py) |
+| 4 | Observe why access to tools alone does not guarantee consistent orchestration. | [English](<./docs/en/Step 04 - Observe Inconsistent Orchestration.md>) · [Italiano](<./docs/it/Step 04 - Observe Inconsistent Orchestration.md>) | [`labs-step04.py`](./labs/python/labs-step04.py) |
+| 5 | Add the `campaign-performance-review` skill to provide a reusable portfolio-review procedure. | [English](<./docs/en/Step 05 - Add the Campaign Performance Review Skill.md>) · [Italiano](<./docs/it/Step 05 - Add the Campaign Performance Review Skill.md>) | [`labs-step05.py`](./labs/python/labs-step05.py) |
+| 6 | Add an LLM-backed A2A pricing agent that applies quotation policy and uses an MCP pricing tool. | [English](<./docs/en/Step 06 - Add an LLM-Based A2A Pricing Agent.md>) · [Italiano](<./docs/it/Step 06 - Add an LLM-Based A2A Pricing Agent.md>) | [`labs-step06.py`](./labs/python/labs-step06.py) |
+| 7 | Replace the pricing A2A agent with a skill and let the main agent call the MCP pricing tool directly. | [English](<./docs/en/Step 07 - Replace the A2A Pricing Agent with a Skill.md>) · [Italiano](<./docs/it/Step 07 - Replace the A2A Pricing Agent with a Skill.md>) | [`labs-step07.py`](./labs/python/labs-step07.py) |
 
 The architectural comparison and conclusions are also available in
 [English](<./docs/en/Comparison and Conclusions.md>) and
@@ -66,13 +66,13 @@ The architectural comparison and conclusions are also available in
 The [`labs/`](./labs) directory also contains the shared services and assets
 used by the seven implementations:
 
-- [`asb_campaign.py`](./labs/asb_campaign.py): the deterministic campaign
+- [`asb_campaign.py`](./labs/python/asb_campaign.py): the deterministic campaign
   dataset used throughout the tutorial;
-- [`agent_campaign_mcp.py`](./labs/agent_campaign_mcp.py): the MCP server that
+- [`agent_campaign_mcp.py`](./labs/python/agent_campaign_mcp.py): the MCP server that
   exposes campaign analysis and pricing tools;
-- [`pricing_a2a_agent.py`](./labs/pricing_a2a_agent.py): the standalone A2A
+- [`pricing_a2a_agent.py`](./labs/python/pricing_a2a_agent.py): the standalone A2A
   pricing agent introduced in Step 6;
-- [`skills/`](./labs/skills): the campaign review and quotation-policy skills.
+- [`skills/`](./labs/python/skills): the campaign review and quotation-policy skills.
 
 ## Getting started
 
