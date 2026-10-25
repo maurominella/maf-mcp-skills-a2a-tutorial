@@ -5,13 +5,11 @@ from agent_framework import Agent
 from agent_framework.openai import OpenAIChatClient
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
-
-load_dotenv()
-
-
 from typing import Annotated
 from pydantic import Field
 from asb_campaign import get_campaign, list_campaigns
+
+load_dotenv()
 
 async def main() -> None:
     from agent_framework import Agent, MCPStreamableHTTPTool
