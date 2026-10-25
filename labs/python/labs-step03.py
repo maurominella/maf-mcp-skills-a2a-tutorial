@@ -1,6 +1,5 @@
-import asyncio
 import os
-
+import asyncio
 from agent_framework import Agent
 from agent_framework.openai import OpenAIChatClient
 from azure.identity import DefaultAzureCredential
