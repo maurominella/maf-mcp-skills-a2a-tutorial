@@ -14,39 +14,6 @@ from pydantic import Field
 from asb_campaign import get_campaign, list_campaigns
 
 
-def all_campaigns() -> list:
-    """List the id, client, and sector of every campaign."""
-    return list_campaigns()
-
-def campaign_metrics(
-    campaign_id: Annotated[
-        str,
-        Field(description="Campaign identifier, for example CMP-004"),
-    ],
-) -> dict:
-    """Return the authoritative metrics for one campaign."""
-    campaign = get_campaign(campaign_id)
-    if campaign is None:
-        return {"error": f"Campaign {campaign_id} was not found."}
-    return campaign
-
-def compute_roi(
-    revenue_eur: Annotated[
-        float,
-        Field(description="Campaign revenue in EUR"),
-    ],
-    budget_eur: Annotated[
-        float,
-        Field(description="Campaign budget in EUR"),
-    ],
-) -> dict:
-    """Calculate ROI as a percentage from revenue and budget."""
-    if budget_eur <= 0:
-        return {"error": "budget_eur must be greater than zero"}
-
-    roi_pct = (revenue_eur - budget_eur) / budget_eur * 100
-    return {"roi_pct": round(roi_pct, 1)}
-
 
 async def main() -> None:
     from agent_framework import Agent, MCPStreamableHTTPTool
