@@ -1,13 +1,11 @@
 import asyncio
 import os
-
 from agent_framework import Agent
 from agent_framework.openai import OpenAIChatClient
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 
 load_dotenv()
-
 
 async def main() -> None:
     openai_client = OpenAIChatClient(

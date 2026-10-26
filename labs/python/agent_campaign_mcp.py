@@ -1,9 +1,7 @@
 import logging
 from typing import Annotated
-
 from fastmcp import FastMCP
 from pydantic import Field
-
 from asb_campaign import get_campaign, list_campaigns
 
 logger = logging.getLogger(__name__)

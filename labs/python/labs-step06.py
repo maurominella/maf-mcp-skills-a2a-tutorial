@@ -1,18 +1,14 @@
 import asyncio
 import os
-
 from agent_framework import Agent
 from agent_framework.openai import OpenAIChatClient
 from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
-
-load_dotenv()
-
-
 from typing import Annotated
 from pydantic import Field
 from asb_campaign import get_campaign, list_campaigns
 
+load_dotenv()
 
 def all_campaigns() -> list:
     """List the id, client, and sector of every campaign."""
