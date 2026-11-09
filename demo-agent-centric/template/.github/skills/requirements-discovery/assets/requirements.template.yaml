@@ -1,0 +1,46 @@
+# Contratto aziendale di output della fase Discovery.
+# La fase Architecture legge questo file: non rinominare le chiavi.
+solution:
+  name: ""
+  goal: ""
+  owner: ""
+
+users: 0                    # utenti totali
+peak_concurrent_users: 0
+
+locations:                  # una voce per sede
+  - city: ""
+    rooms: 0
+
+actors:                     # es. dipendente, receptionist, facility manager, ospite
+  - ""
+
+integrations:               # es. Teams, Outlook
+  - ""
+
+channels:
+  web: true
+  mobile: false
+
+languages:                  # es. Italiano, Inglese
+  - ""
+
+functional_requirements:
+  - id: FR-01
+    description: ""
+    acceptance: ""
+
+non_functional_requirements:
+  availability: ""          # es. "99.9% in orario lavorativo"
+  performance: ""
+  data_residency: ""        # es. "EU"
+
+compliance:
+  gdpr: true
+  personal_data: []         # quali dati personali vengono trattati
+
+constraints:
+  monthly_budget_eur: null
+  go_live: null
+
+open_questions: []

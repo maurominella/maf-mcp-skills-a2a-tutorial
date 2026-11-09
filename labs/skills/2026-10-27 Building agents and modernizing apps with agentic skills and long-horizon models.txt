@@ -1,0 +1,73 @@
+AI-generated content in notes may be incorrect. Learn more
+Decisions
+•	Adopt a research–implement–review workflow with security validation
+•	Distribute reusable CSA skills through repositories and marketplace channels
+Agenda
+•	Demonstrate agentic skills (60 min)
+•	Demonstrate agentic skills (60 min)
+Meeting notes
+Model Evaluation 
+•	Marco said the session would focus on the technical pros and cons of using the latest models, including Opus 5 and Astra 6, in real-world engagements
+•	Marco described Opus 5.5 and Asta 6 as the first long-horizon models in his discussion, defining long-horizon behavior as taking a distant goal and pursuing it through completion with limited step-by-step guidance
+•	Marco reported that Opus 5.5 and Asta 6 appeared more self-sufficient once a suitable harness was configured, and said Opus 5.5 seemed somewhat more capable of handling a very large goal based on his extended personal usage
+•	Marco tested multiple implementation approaches, including a direct prompt, implementation skills, and SpecKit, across Opus 5.5, SOL 6.1, and Astra 6
+•	Marco reported that SOL 6.1 completed only part of the application and stopped multiple times, leaving additional implementation work, while Opus 5.5 reasoned and worked for about five hours continuously
+•	Marco reported that a long-horizon model produced an almost-complete agentic application with a few remaining omissions and errors, while other models did not produce a comparable working result
+•	Marco explained that he used Anthropic’s skill creator to generate skill specifications and an evals.json file that could be rerun after changes to check performance against a baseline
+•	Carlos noted that the skill creator used three agents to perform its evaluation work
+•	Marco reported that his testing of different model and skill combinations produced varied results: one performed well, another stopped frequently, another took a long time, and another produced poor-quality output
+•	Fausto reported that Astra performed best in his test of visual CAD tasks, while Marco noted that model comparisons needed to be kept current because model capabilities could change within a week
+Technical Applications 
+•	Marco and Carlos had explored using skills in activities connected to LVAP, while keeping this discussion focused on the technical aspects
+•	Marco described using agent-creation skills together with Foundry and Azure-related skills to turn a short prompt for a banner-quotation website chatbot into architectural files; the skills interviewed him about functional requirements before moving to technical design
+•	Marco said the selected implementation used a Power Pages experience with Copilot Studio, after the tooling suggested either a Foundry agent or a Power Platform agent
+•	Marco reported that the generated deliverables included detailed specifications, a technical solution description, an implementation plan, a solution diagram, component details, flow maps, and a deployment diagram covering three Power Platform environments
+•	Marco reported that a Power Pages quotation portal was built and deployed in about five hours; it used Entra ID sign-in, displayed users' previous quotes, stored quotations in Dataverse, and exposed PDF quotations after salesperson approval
+•	Marco said the portal's Opal Studio agent was built with Opus 5.5 and a specification, with tools for connecting to the quotation solution
+•	Marco demonstrated a skill that interviewed him about functional requirements from a customer RFP for a financial-industry investment eligibility agent, including checks against regulatory documentation and multiple databases before investing in a company
+•	Marco explained that the skill evaluated the initial answers and generated additional questions as needed; specification depth determined the number of rounds, which typically involved at least 20–30 questions
+•	Marco clarified that the skill did not ask additional questions about the input RFP file in this example because it was well specified, whereas a more generic functional prompt in another test led to many functional questions before addressing technical details
+•	Marco said the demonstrated solution used a Teams bot for interrogation and a web app front end, based on the requirements gathered by the skill
+•	Marco said the business requirement was provided as a document in this example, and the skill used it to generate cost estimates, an implementation plan, and a functional specification covering user stories, functional and technical requirements, non-functional requirements, and implementation decisions
+Demonstrations 
+•	Carlos was preparing a demonstration of the SI agent for the session
+•	Marco reported that the process was still generating the draw.io output, which was expected to appear after a few minutes
+•	Carlos demonstrated the migrate-and-modernize SRE agent pitch skill from the repository of skills created by Marco and the team; the skill requested a TP ID and was configured to collect customer data from CX Observe and produce a deck
+•	Carlos said the SRE agent pitch skill could take approximately five to ten minutes because it retrieved customer data from CX Observe
+•	Carlos said the SRE Agent pitch approach used customer-specific evidence to show how the agent could help, rather than presenting product features without that context
+Application Modernization 
+•	For an application modernization example, Marco used source code from a SharePoint 2016 application to generate functional, technical, and non-functional requirements, acceptance criteria, and potential Azure target architectures and implementation languages
+•	Marco described mapping the identity flow and a potential migration for an existing application using Container Apps, Microsoft Entra DB, Azure Service Bus, and a SQL database
+•	Marco said an Opus-based implementation recreated an oil-and-gas application for managing exploration-well document workflows, retaining the features he observed while improving the appearance; he made a few UI adjustments and fixed an issue that was found
+Application Architecture 
+•	Marco described a suggested target architecture consisting of an owned durable workflow, Teams and web interfaces calling company APIs, a deterministic service, an agent selecting authorized search and extraction tools, Azure storage for business and audit records, Azure AI Search for retrieval, and Foundry for EU model inference as an option
+•	Marco explained that the architecture skill decomposed the business problem, interviewed the user about requirements, and reasoned about Microsoft cloud agent patterns across Foundry, Copilot Studio, Copilot SDK, hosted agents, and Logic Apps before suggesting a target architecture
+•	Marco described the workflow as an architectural design session aligned with the CSA-E methodology: after reviewing and approving the generated report, the process implemented the specifications, architectural documents, and diagrams before moving to implementation
+•	Marco said the generated deployment diagram showed the production environment, components, product flow, and regional information, and he confirmed that it was finished
+Development Tooling 
+•	Marco clarified that the setup used the standard GitHub Copilot harness with pre-built skills installed in an otherwise empty repository; a plugin provided commands to install the skills
+•	Marco explained that he manually invoked a skill to interview him and create target architectures from the answers, after which the process paused for further questions
+•	Marco explained that the skills came from three sources: official Microsoft Azure skills, community-provided skills for the questioning or “grilling” process, and skills he created or adapted for organizing the initial session and generating draw.io diagrams
+•	Marco described using a separate writing-for-agents skill to generate files such as AGENTS.md and skill definitions from a specification, and said he repeatedly reviewed the results against his knowledge of the topic
+•	Marco explained that a standard harness used additional skills or agents to create a working channel for the AI, and demonstrated prompting Opus to implement the architecture documentation
+•	Carlos explained that the skills were available as Copilot plugins through the marketplace, including Migrator Modernize, Baseline, Developer Skills, and AI App Skills; the installation instructions were also documented in the repository README
+•	Carlos invited participants to submit feedback, open issues, or create pull requests in the skills repository to improve the skills
+•	Carlos noted that the VM modernization and regional-selection workflows worked in Cowork when the source spreadsheet was available, while the SRE workflow accessed CX Observe directly and would probably need to run from Copilot CLI
+Customer Evidence 
+•	Carlos explained that the SRE Agent pitch skill used CX Observe support-case signals to identify customer issues, assess customer health readiness, and connect those issues to relevant SRE Agent capabilities
+Multi-Region Assessment 
+•	Carlos described a multi-region deck generated from Azure Quick Review data; it included regional assessment scores, architecture placeholders, customer questions, current state, expected growth, storage-account information, and regional readiness
+•	For a sample targeting Poland Central, the multi-region assessment showed that 96.3% of services were available there and that coverage was 100%
+•	Carlos explained that Azure Quick Review could be rerun to produce a spreadsheet containing customer state and other data for VM assessment and migration work; a Copilot skill could then use that data to generate a deck with lifecycle and pricing information, target SKUs, and a machine-specific playbook
+•	Carlos explained that Azure Quick Review generated a large spreadsheet for VM modernization and regional selection, which could be supplied to the skill through Cowork or Copilot CLI to generate the corresponding deck
+Skills Repository 
+•	Marco said the team was building a central repository of quality skills for regional CSAs; skills for building agents and modernizing applications would instead remain in customer-facing AVS materials
+•	Marco said that, once Carlos merged his request, the team would also have a skill for agent modernization; he noted that this work was relevant to people working on information and application projects
+Skills and Agent Design 
+•	Marco and Fausto clarified that skills were useful when an agent needed specialized direction for a nonstandard task, such as producing a PowerPoint presentation with specified topics, while the underlying model could handle more general work
+•	Marco compared an agent to a person and a skill to hiring that person for a specific Microsoft task, with the skill supplying target architecture guidance and specialized knowledge so the agent would follow the intended plan
+Follow-up tasks
+Task	Assigned to	Due date	Bucket
+			To do
+Share the multi-region generated deck later (Carlos)			
+

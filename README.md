@@ -88,6 +88,16 @@ The later steps require the MCP server and, for Step 6, the A2A pricing agent
 to be running. The relevant documentation pages include the exact commands and
 execution order.
 
+## Next step: from Copilot-Centric to Agent-Centric
+
+The [`demo-agent-centric/`](./demo-agent-centric) kit (Italian) prepares, from
+scratch, the end-to-end "Hello World" demo described in Chapter 6 of
+[*Dal paradigma Copilot-Centric al paradigma Agent-Centric*](<./docs/it/Dal paradigma Copilot-Centric al paradigma Agent-Centric.docx>):
+GitHub Copilot in VS Code builds an enterprise meeting-room booking solution
+through Discovery, Architecture, Security, Delivery planning, Implementation, and
+Deployment phases, combining Microsoft, community (Matt Pocock), and
+organization-specific skills.
+
 ## Official references and further reading
 
 - [Introducing Skills — Anthropic](https://claude.com/blog/skills): the
