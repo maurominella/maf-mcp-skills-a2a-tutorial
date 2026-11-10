@@ -90,13 +90,13 @@ execution order.
 
 ## Next step: from Copilot-Centric to Agent-Centric
 
-The [`demo-agent-centric/`](./demo-agent-centric) kit (Italian) prepares, from
-scratch, the end-to-end "Hello World" demo described in Chapter 6 of
-[*Dal paradigma Copilot-Centric al paradigma Agent-Centric*](<./docs/it/Dal paradigma Copilot-Centric al paradigma Agent-Centric.docx>):
-GitHub Copilot in VS Code builds an enterprise meeting-room booking solution
-through Discovery, Architecture, Security, Delivery planning, Implementation, and
-Deployment phases, combining Microsoft, community (Matt Pocock), and
-organization-specific skills.
+The [`demo-agent-centric/`](./demo-agent-centric) kit (Italian) turns the principles of
+[*Dal paradigma Copilot-Centric al paradigma Agent-Centric*](<./docs/it/Dal paradigma Copilot-Centric al paradigma Agent-Centric.docx>)
+into a standard, reusable harness for GitHub Copilot in VS Code: the organization
+prepares the process once (Discovery, Architecture, Security, Delivery planning,
+Implementation, Deployment), and for each new solution the user provides only the
+goal. It combines Microsoft, community (Matt Pocock), and organization-specific
+skills. Chapter 6's meeting-room booking app is used only as the workshop example.
 
 ## Official references and further reading
 

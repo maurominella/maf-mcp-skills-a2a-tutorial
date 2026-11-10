@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
-# Crea da zero il workspace della demo "Hello World" Agent-Centric (cap. 6).
-# Uso: ./bootstrap.sh [cartella-destinazione]
+# Prepara un nuovo progetto con l'harness Agent-Centric (uguale per ogni progetto).
+# Uso: ./bootstrap.sh <nome-progetto> [cartella-padre]
+#   es. ./bootstrap.sh smart-meeting-rooms          -> ~/git_repos/smart-meeting-rooms
 set -euo pipefail
 
+if [[ $# -lt 1 || "$1" == -* ]]; then
+  echo "Uso: $0 <nome-progetto> [cartella-padre, default ~/git_repos]"
+  exit 1
+fi
+
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET="${1:-$HOME/git_repos/smart-meeting-rooms}"
+PROJECT="$1"
+TARGET="${2:-$HOME/git_repos}/$PROJECT"
 
 COMMUNITY_SKILLS=(
   setup-matt-pocock-skills  # configura tracker, label e docs (una volta per repo)
@@ -13,6 +20,7 @@ COMMUNITY_SKILLS=(
   domain-modeling           # ADR e glossario (Architecture)
   to-spec                   # /to-spec: spec nel tracker (Delivery planning)
   to-tickets                # /to-tickets: ticket con dipendenze (Delivery planning)
+  triage                    # etichette dei ticket (setup le crea sul tracker)
   implement                 # /implement: implementazione di un ticket
   tdd                       # test-first, usata da implement
   code-review               # review, usata da implement
@@ -82,10 +90,10 @@ fi
 
 cat <<EOF
 
-Workspace pronto. Prossimi passi:
-  1. code "$TARGET"
-  2. (consigliato) gh repo create smart-meeting-rooms --private --source . --push
-     (serve il commit iniziale: se è stato saltato, eseguilo prima)
-  3. In Copilot Chat: /setup-matt-pocock-skills   (sceglie il tracker dei ticket)
-  4. In Copilot Chat: /hello-world                 (avvia la demo)
+Progetto pronto in $TARGET. Prossimi passi (vedi README del kit, sezione 3):
+  1. cd "$TARGET" && gh repo create $PROJECT --private --source . --push
+  2. code "$TARGET"
+  3. In Copilot Chat: /setup-matt-pocock-skills   (tracker GitHub, etichette di default)
+  4. git add . && git commit -m "docs: configurazione skill" && git push
+  5. In Copilot Chat: /nuovo-progetto <cosa vuoi costruire>
 EOF

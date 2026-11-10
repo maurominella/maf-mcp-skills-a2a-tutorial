@@ -5,24 +5,25 @@ solution:
   goal: ""
   owner: ""
 
+actors:                     # una voce per ruolo
+  - role: ""
+    description: ""
+
 users: 0                    # utenti totali
 peak_concurrent_users: 0
 
-locations:                  # una voce per sede
-  - city: ""
-    rooms: 0
-
-actors:                     # es. dipendente, receptionist, facility manager, ospite
+locations:                  # sedi / paesi in cui la soluzione è usata
   - ""
 
-integrations:               # es. Teams, Outlook
+integrations:               # sistemi esistenti con cui la soluzione dialoga
+  - system: ""
+    purpose: ""
+    direction: ""           # in | out | bidirectional
+
+channels:                   # es. web, mobile, chat, api
   - ""
 
-channels:
-  web: true
-  mobile: false
-
-languages:                  # es. Italiano, Inglese
+languages:
   - ""
 
 functional_requirements:
@@ -30,17 +31,23 @@ functional_requirements:
     description: ""
     acceptance: ""
 
+ai_features: []             # vuoto se l'utente non ritiene utile l'AI
+
 non_functional_requirements:
-  availability: ""          # es. "99.9% in orario lavorativo"
+  availability: ""
   performance: ""
-  data_residency: ""        # es. "EU"
+  data_residency: ""
 
 compliance:
   gdpr: true
   personal_data: []         # quali dati personali vengono trattati
+  retention: ""
 
 constraints:
   monthly_budget_eur: null
   go_live: null
+  standards: []
+
+domain_specific: {}         # informazioni del dominio che non rientrano nelle chiavi sopra
 
 open_questions: []

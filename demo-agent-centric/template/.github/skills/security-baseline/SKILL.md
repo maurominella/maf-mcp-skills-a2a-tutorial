@@ -1,12 +1,12 @@
 ---
 name: security-baseline
-description: "Security Architect aziendale: verifica un'architettura Azure contro la security baseline dell'organizzazione (identità Entra ID, segreti in Key Vault, monitoraggio Application Insights, GDPR, naming e tag) e produce docs/03-security/security-review.md. Use when: security review, security assessment, verifica sicurezza architettura, baseline di sicurezza, GDPR check, fase 3 Security."
+description: "Security Architect aziendale: verifica un'architettura Azure contro la security baseline dell'organizzazione (identità Entra ID, segreti in Key Vault, rete, monitoraggio, GDPR, naming e tag) e produce docs/03-security/security-review.md. Use when: security review, security assessment, verifica sicurezza architettura, baseline di sicurezza, GDPR check, fase 3 Security."
 ---
 
 # Security Baseline (skill aziendale)
 
 Applica le regole di sicurezza **specifiche dell'organizzazione**, che nessuna skill
-pubblica conosce, all'architettura proposta.
+pubblica conosce, all'architettura proposta. Vale per qualsiasi progetto.
 
 ## Input
 
@@ -23,14 +23,16 @@ pubblica conosce, all'architettura proposta.
 4. Collega i dati personali elencati in `compliance.personal_data` dei requisiti
    alle misure GDPR (minimizzazione, conservazione, diritto alla cancellazione).
 5. Scrivi `docs/03-security/security-review.md` con questa struttura:
-   - riepilogo (numero di controlli conformi / non conformi);
+   - riepilogo (numero di controlli conformi / non conformi / non applicabili);
    - tabella dei controlli `ID | Controllo | Esito | Evidenza / Correzione`;
-   - sezione finale con le chiavi minime attese dal cap. 6.3:
+   - sintesi delle scelte di sicurezza adottate, in YAML:
      ```yaml
-     authentication: Entra ID
-     secrets: Key Vault
-     monitoring: Application Insights
-     compliance: GDPR
+     authentication: ""
+     authorization: ""
+     secrets: ""
+     network: ""
+     monitoring: ""
+     compliance: []
      ```
    - rischi residui che richiedono l'accettazione esplicita dell'utente.
 6. Se una correzione modifica l'architettura, aggiorna `architecture.md` e aggiungi un ADR.
